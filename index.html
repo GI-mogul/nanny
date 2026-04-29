@@ -930,8 +930,8 @@
             <span>Записи</span>
             <span id="recordsCount">0</span>
           </summary>
-          <div class="days" id="days"></div>
-        </details>
+        <div class="days" id="days"></div>
+      </details>
       </div>
 
       <aside class="side-panel">
@@ -964,6 +964,7 @@
             </div>
           </div>
           <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € + паркинг 0 € = <strong>0 €</strong></div>
+          <div id="emptyStateMount"></div>
         </section>
 
         <details class="advanced-panel" id="advancedPanel" open>
@@ -1158,6 +1159,7 @@
       auditCount: document.querySelector("#auditCount"),
       advancedPanel: document.querySelector("#advancedPanel"),
       exportBtn: document.querySelector("#exportBtn"),
+      emptyStateMount: document.querySelector("#emptyStateMount"),
       emptyTemplate: document.querySelector("#emptyTemplate")
     };
 
@@ -1398,9 +1400,10 @@
 
     function render() {
       els.days.replaceChildren();
+      els.emptyStateMount.replaceChildren();
 
       if (!state.days.length) {
-        els.days.append(els.emptyTemplate.content.cloneNode(true));
+        els.emptyStateMount.append(els.emptyTemplate.content.cloneNode(true));
       } else {
         state.days.forEach((day) => els.days.append(renderDay(day)));
       }
