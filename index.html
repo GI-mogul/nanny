@@ -1414,7 +1414,7 @@
       els.topTotal.textContent = money(totals.pay);
       els.hourRateValue.textContent = money(state.hourRate);
       els.tripRateValue.textContent = money(state.tripRate);
-      els.sumDays.textContent = state.days.length;
+      els.sumDays.textContent = countUniqueDates(state.days);
       els.recordsCount.textContent = state.days.length;
       els.sumTrips.textContent = totals.trips;
       els.sumHours.textContent = formatDuration(totals.ms);
@@ -1560,6 +1560,10 @@
         acc.pay += payFor(day);
         return acc;
       }, { ms: 0, trips: 0, parking: 0, pay: 0 });
+    }
+
+    function countUniqueDates(days) {
+      return new Set(days.map((day) => day.date)).size;
     }
 
     function payFor(day) {
