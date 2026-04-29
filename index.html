@@ -505,6 +505,49 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .audit-panel {
+      border-top: 1px solid var(--line);
+    }
+
+    .audit-panel summary {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .audit-list {
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+      padding: 0 16px 16px;
+    }
+
+    .audit-item {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+    }
+
+    .audit-item strong {
+      display: block;
+      font-size: .86rem;
+    }
+
+    .audit-item span {
+      display: block;
+      color: var(--muted);
+      font-size: .76rem;
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
     .total-cell {
       grid-column: 1 / -1;
       background: #223531;
@@ -905,6 +948,14 @@
             Скачать CSV
           </button>
         </section>
+
+        <details class="audit-panel" id="auditPanel">
+          <summary>
+            <span>История действий</span>
+            <span id="auditCount">0</span>
+          </summary>
+          <div class="audit-list" id="auditList"></div>
+        </details>
       </aside>
     </section>
   </main>
@@ -973,6 +1024,8 @@
       monthPrev: document.querySelector("#monthPrev"),
       monthNext: document.querySelector("#monthNext"),
       monthLabel: document.querySelector("#monthLabel"),
+      auditList: document.querySelector("#auditList"),
+      auditCount: document.querySelector("#auditCount"),
       exportBtn: document.querySelector("#exportBtn"),
       emptyTemplate: document.querySelector("#emptyTemplate")
     };
@@ -1143,6 +1196,7 @@
         els.hourRate.value = state.hourRate;
         els.tripRate.value = state.tripRate;
         render();
+        loadAuditLog();
       }
     }
 
@@ -1153,15 +1207,50 @@
 
     async function saveServerStateNow() {
       try {
-        await fetch("/api/state", {
+        const response = await fetch("/api/state", {
           method: "PUT",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ state })
         });
+        if (response.ok) loadAuditLog();
       } catch {
         // Keep local changes; the next successful edit will retry.
       }
+    }
+
+    async function loadAuditLog() {
+      try {
+        const response = await fetch("/api/audit-log", { credentials: "same-origin" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        renderAuditLog(payload.events || []);
+      } catch {
+        // Audit log is server-only; local file mode can ignore it.
+      }
+    }
+
+    function renderAuditLog(events) {
+      els.auditCount.textContent = events.length;
+      els.auditList.replaceChildren();
+
+      if (!events.length) {
+        const empty = document.createElement("div");
+        empty.className = "audit-item";
+        empty.innerHTML = "<strong>Пока пусто</strong><span>Действия появятся после изменений.</span>";
+        els.auditList.append(empty);
+        return;
+      }
+
+      events.forEach((event) => {
+        const item = document.createElement("div");
+        item.className = "audit-item";
+        item.innerHTML = `
+          <strong>${escapeHtml(event.details)}</strong>
+          <span>${escapeHtml(event.userEmail)} · ${escapeHtml(formatDateTime(event.createdAt))}</span>
+        `;
+        els.auditList.append(item);
+      });
     }
 
     function normalizeClientState(value) {
@@ -1440,6 +1529,15 @@
         month: "long",
         year: "numeric"
       }).format(date);
+    }
+
+    function formatDateTime(value) {
+      return new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
     }
 
     function money(value) {

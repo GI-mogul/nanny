@@ -1,4 +1,5 @@
 .sessions.json
 .app-state.json
+.audit-log.json
 node_modules/
 .env

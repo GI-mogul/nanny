@@ -14,6 +14,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toSt
 const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 7 * 24 * 60 * 60);
 const SESSION_STORE_PATH = process.env.SESSION_STORE_PATH || path.join(__dirname, ".sessions.json");
 const DATA_STORE_PATH = process.env.DATA_STORE_PATH || path.join(__dirname, ".app-state.json");
+const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, ".audit-log.json");
 const DATABASE_URL = process.env.DATABASE_URL;
 const ALLOWED_EMAILS = new Set(
   (process.env.ALLOWED_EMAILS || "")
@@ -153,6 +154,15 @@ async function initDataStore() {
       updated_at timestamptz not null default now()
     )
   `);
+  await dbPool.query(`
+    create table if not exists audit_log (
+      id bigserial primary key,
+      created_at timestamptz not null default now(),
+      user_email text not null,
+      action text not null,
+      details text not null
+    )
+  `);
 }
 
 async function getSharedState() {
@@ -184,6 +194,86 @@ async function saveSharedState(value) {
 
   await fs.promises.writeFile(DATA_STORE_PATH, JSON.stringify(normalized));
   return normalized;
+}
+
+async function getAuditLog(limit = 30) {
+  await dataStoreReady;
+  const safeLimit = Math.max(1, Math.min(100, Number(limit) || 30));
+  if (dbPool) {
+    const result = await dbPool.query(
+      "select created_at, user_email, action, details from audit_log order by created_at desc, id desc limit $1",
+      [safeLimit]
+    );
+    return result.rows.map((row) => ({
+      createdAt: row.created_at,
+      userEmail: row.user_email,
+      action: row.action,
+      details: row.details
+    }));
+  }
+
+  try {
+    return JSON.parse(await fs.promises.readFile(AUDIT_LOG_PATH, "utf8")).slice(0, safeLimit);
+  } catch {
+    return [];
+  }
+}
+
+async function appendAuditLog(user, action, details) {
+  await dataStoreReady;
+  const event = {
+    createdAt: new Date().toISOString(),
+    userEmail: user.email,
+    action,
+    details
+  };
+
+  if (dbPool) {
+    await dbPool.query(
+      "insert into audit_log (user_email, action, details) values ($1, $2, $3)",
+      [event.userEmail, event.action, event.details]
+    );
+    return;
+  }
+
+  const current = await getAuditLog(100);
+  await fs.promises.writeFile(AUDIT_LOG_PATH, JSON.stringify([event, ...current].slice(0, 100)));
+}
+
+function describeStateChanges(previousState, nextState) {
+  const previous = normalizeState(previousState);
+  const next = normalizeState(nextState);
+  const events = [];
+  const previousDays = new Map(previous.days.map((day) => [day.id, day]));
+  const nextDays = new Map(next.days.map((day) => [day.id, day]));
+
+  for (const day of next.days) {
+    if (!previousDays.has(day.id)) events.push(["add_day", `Добавлена запись ${formatDayForLog(day)}`]);
+  }
+
+  for (const day of previous.days) {
+    if (!nextDays.has(day.id)) events.push(["delete_day", `Удалена запись ${formatDayForLog(day)}`]);
+  }
+
+  for (const day of next.days) {
+    const oldDay = previousDays.get(day.id);
+    if (oldDay && JSON.stringify(oldDay) !== JSON.stringify(day)) {
+      events.push(["edit_day", `Изменена запись ${formatDayForLog(day)}`]);
+    }
+  }
+
+  if (previous.hourRate !== next.hourRate || previous.tripRate !== next.tripRate) {
+    events.push(["edit_rates", `Изменены ставки: час ${next.hourRate} €, поездка ${next.tripRate} €`]);
+  }
+
+  return events;
+}
+
+function formatDayForLog(day) {
+  const minutes = Math.floor(day.elapsedMs / 60000);
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = String(minutes % 60).padStart(2, "0");
+  return `${day.date}, ${hours}:${restMinutes}, поездки ${day.trips}, паркинг ${day.parking} €`;
 }
 
 function normalizeState(value) {
@@ -464,7 +554,11 @@ const server = http.createServer(async (req, res) => {
 
       if (req.method === "PUT") {
         const body = await readJsonBody(req);
+        const previous = await getSharedState();
         const saved = await saveSharedState(body.state);
+        for (const [action, details] of describeStateChanges(previous, saved)) {
+          await appendAuditLog(user, action, details);
+        }
         sendJson(res, 200, { state: saved });
         return;
       }
@@ -473,6 +567,22 @@ const server = http.createServer(async (req, res) => {
     } catch (error) {
       console.error(error);
       sendJson(res, 500, { error: "Failed to process shared state" });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/audit-log") {
+    const user = currentUser(req);
+    if (!user) {
+      sendJson(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      sendJson(res, 200, { events: await getAuditLog(40) });
+    } catch (error) {
+      console.error(error);
+      sendJson(res, 500, { error: "Failed to load audit log" });
     }
     return;
   }
