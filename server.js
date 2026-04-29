@@ -13,6 +13,8 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 7 * 24 * 60 * 60);
 const SESSION_STORE_PATH = process.env.SESSION_STORE_PATH || path.join(__dirname, ".sessions.json");
+const DATA_STORE_PATH = process.env.DATA_STORE_PATH || path.join(__dirname, ".app-state.json");
+const DATABASE_URL = process.env.DATABASE_URL;
 const ALLOWED_EMAILS = new Set(
   (process.env.ALLOWED_EMAILS || "")
     .split(",")
@@ -26,8 +28,12 @@ const publicFiles = new Map([
   ["/", "index.html"],
   ["/index.html", "index.html"]
 ]);
+let dbPool = null;
 
 loadSessions();
+const dataStoreReady = initDataStore().catch((error) => {
+  console.error("Failed to initialize data store:", error.message);
+});
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
@@ -39,6 +45,10 @@ function send(res, status, body, headers = {}) {
     ...headers
   });
   res.end(body);
+}
+
+function sendJson(res, status, payload) {
+  send(res, status, JSON.stringify(payload), { "Content-Type": "application/json; charset=utf-8" });
 }
 
 function redirect(res, location, headers = {}) {
@@ -126,6 +136,101 @@ function saveSessions() {
   );
   fs.writeFile(SESSION_STORE_PATH, JSON.stringify(activeSessions), (error) => {
     if (error) console.error("Failed to save sessions:", error.message);
+  });
+}
+
+async function initDataStore() {
+  if (!DATABASE_URL) return;
+  const { Pool } = require("pg");
+  dbPool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes("localhost") ? false : { rejectUnauthorized: false }
+  });
+  await dbPool.query(`
+    create table if not exists app_state (
+      key text primary key,
+      value jsonb not null,
+      updated_at timestamptz not null default now()
+    )
+  `);
+}
+
+async function getSharedState() {
+  await dataStoreReady;
+  if (dbPool) {
+    const result = await dbPool.query("select value from app_state where key = $1", ["shared"]);
+    return result.rows[0]?.value || null;
+  }
+
+  try {
+    return JSON.parse(await fs.promises.readFile(DATA_STORE_PATH, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+async function saveSharedState(value) {
+  await dataStoreReady;
+  const normalized = normalizeState(value);
+  if (dbPool) {
+    await dbPool.query(`
+      insert into app_state (key, value, updated_at)
+      values ($1, $2, now())
+      on conflict (key)
+      do update set value = excluded.value, updated_at = now()
+    `, ["shared", normalized]);
+    return normalized;
+  }
+
+  await fs.promises.writeFile(DATA_STORE_PATH, JSON.stringify(normalized));
+  return normalized;
+}
+
+function normalizeState(value) {
+  const state = value && typeof value === "object" ? value : {};
+  return {
+    ratesVersion: Number(state.ratesVersion || 2),
+    hourRate: readPositiveNumber(state.hourRate, 13),
+    tripRate: readPositiveNumber(state.tripRate, 4.86),
+    days: Array.isArray(state.days) ? state.days.map(normalizeDay).filter(Boolean) : []
+  };
+}
+
+function normalizeDay(day) {
+  if (!day || typeof day !== "object" || !/^\d{4}-\d{2}-\d{2}$/.test(String(day.date || ""))) return null;
+  return {
+    id: String(day.id || crypto.randomUUID()),
+    date: String(day.date),
+    note: String(day.note || "").slice(0, 300),
+    elapsedMs: Math.max(0, Math.floor(readPositiveNumber(day.elapsedMs, 0))),
+    startedAt: null,
+    trips: Math.max(0, Math.floor(readPositiveNumber(day.trips, 0)))
+  };
+}
+
+function readPositiveNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1024 * 1024) {
+        req.destroy();
+        reject(new Error("Request body is too large."));
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
   });
 }
 
@@ -304,7 +409,7 @@ function serveApp(req, res, fileName) {
   });
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   if (url.pathname === "/login") {
@@ -336,10 +441,38 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/api/me") {
     const user = currentUser(req);
     if (!user) {
-      send(res, 401, JSON.stringify({ user: null }), { "Content-Type": "application/json; charset=utf-8" });
+      sendJson(res, 401, { user: null });
       return;
     }
-    send(res, 200, JSON.stringify({ user }), { "Content-Type": "application/json; charset=utf-8" });
+    sendJson(res, 200, { user });
+    return;
+  }
+
+  if (url.pathname === "/api/state") {
+    const user = currentUser(req);
+    if (!user) {
+      sendJson(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      if (req.method === "GET") {
+        sendJson(res, 200, { state: await getSharedState() });
+        return;
+      }
+
+      if (req.method === "PUT") {
+        const body = await readJsonBody(req);
+        const saved = await saveSharedState(body.state);
+        sendJson(res, 200, { state: saved });
+        return;
+      }
+
+      sendJson(res, 405, { error: "Method not allowed" });
+    } catch (error) {
+      console.error(error);
+      sendJson(res, 500, { error: "Failed to process shared state" });
+    }
     return;
   }
 

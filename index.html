@@ -881,6 +881,8 @@
     let editingDayId = null;
     let selectedWeekDate = toDateInputValue(new Date());
     let selectedMonth = toMonthInputValue(new Date());
+    let saveTimer = null;
+    let serverSyncReady = false;
 
     const els = {
       form: document.querySelector("#addDayForm"),
@@ -921,6 +923,7 @@
     els.monthDate.value = selectedMonth;
     els.hourRate.value = state.hourRate;
     els.tripRate.value = state.tripRate;
+    loadServerState();
 
     els.form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1035,11 +1038,64 @@
 
     function persist() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (serverSyncReady) scheduleServerSave();
     }
 
     function persistAndRender() {
       persist();
       render();
+    }
+
+    async function loadServerState() {
+      try {
+        const response = await fetch("/api/state", { credentials: "same-origin" });
+        if (!response.ok) {
+          render();
+          return;
+        }
+
+        const payload = await response.json();
+        const serverState = payload.state;
+        if (serverState?.days?.length || serverState?.hourRate || serverState?.tripRate) {
+          state = normalizeClientState(serverState);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } else if (state.days.length) {
+          await saveServerStateNow();
+        }
+      } catch {
+        // Local file mode or offline use keeps browser storage working.
+      } finally {
+        serverSyncReady = true;
+        els.hourRate.value = state.hourRate;
+        els.tripRate.value = state.tripRate;
+        render();
+      }
+    }
+
+    function scheduleServerSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveServerStateNow, 250);
+    }
+
+    async function saveServerStateNow() {
+      try {
+        await fetch("/api/state", {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+        });
+      } catch {
+        // Keep local changes; the next successful edit will retry.
+      }
+    }
+
+    function normalizeClientState(value) {
+      return {
+        ...defaultState,
+        ...value,
+        days: Array.isArray(value?.days) ? value.days : []
+      };
     }
 
     function render() {
