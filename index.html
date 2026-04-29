@@ -143,7 +143,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(360px, 400px);
+      grid-template-columns: minmax(760px, 1fr) minmax(360px, 400px);
       gap: 20px;
       align-items: start;
     }
@@ -159,7 +159,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(160px, 190px) minmax(90px, 110px) minmax(90px, 110px) minmax(220px, 1fr) auto;
+      grid-template-columns: minmax(150px, 180px) minmax(82px, 96px) minmax(82px, 96px) minmax(96px, 116px) minmax(190px, 1fr) auto;
       gap: 10px;
       align-items: end;
       padding: 16px;
@@ -259,7 +259,7 @@
 
     .day-card {
       display: grid;
-      grid-template-columns: minmax(180px, 1.05fr) minmax(104px, .5fr) minmax(94px, .45fr) minmax(220px, 1fr) auto;
+      grid-template-columns: minmax(170px, 1fr) minmax(100px, .45fr) minmax(88px, .4fr) minmax(110px, .45fr) minmax(220px, 1fr) auto;
       gap: 14px;
       align-items: center;
       padding: 12px;
@@ -339,7 +339,7 @@
 
     .edit-grid {
       display: grid;
-      grid-template-columns: minmax(145px, .9fr) minmax(180px, 1.2fr) minmax(96px, .55fr) minmax(96px, .55fr) minmax(112px, .65fr);
+      grid-template-columns: minmax(135px, .8fr) minmax(170px, 1.1fr) minmax(88px, .45fr) minmax(88px, .45fr) minmax(102px, .55fr) minmax(102px, .55fr);
       gap: 10px;
       align-items: end;
     }
@@ -754,6 +754,10 @@
             <input type="number" id="workMinutes" min="0" max="59" step="1" inputmode="numeric" value="0">
           </label>
           <label>
+            Паркинг €
+            <input type="number" id="workParking" min="0" step="0.01" inputmode="decimal" value="0">
+          </label>
+          <label>
             Заметка
             <input type="text" id="workNote" placeholder="Например: вечер, садик, выходной">
           </label>
@@ -821,12 +825,16 @@
               <span>За поездки</span>
               <strong id="sumTripPay">0 €</strong>
             </div>
+            <div class="summary-cell">
+              <span>Паркинг</span>
+              <strong id="sumParking">0 €</strong>
+            </div>
             <div class="summary-cell total-cell">
               <span>Общая сумма</span>
               <strong id="sumPay">0 €</strong>
             </div>
           </div>
-          <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € = <strong>0 €</strong></div>
+          <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € + паркинг 0 € = <strong>0 €</strong></div>
 
           <div class="period-summary">
             <div class="period-box">
@@ -931,6 +939,7 @@
       workDate: document.querySelector("#workDate"),
       workHours: document.querySelector("#workHours"),
       workMinutes: document.querySelector("#workMinutes"),
+      workParking: document.querySelector("#workParking"),
       workNote: document.querySelector("#workNote"),
       ratesView: document.querySelector("#ratesView"),
       ratesEdit: document.querySelector("#ratesEdit"),
@@ -947,6 +956,7 @@
       sumTrips: document.querySelector("#sumTrips"),
       sumHours: document.querySelector("#sumHours"),
       sumTripPay: document.querySelector("#sumTripPay"),
+      sumParking: document.querySelector("#sumParking"),
       sumPay: document.querySelector("#sumPay"),
       sumFormula: document.querySelector("#sumFormula"),
       weekHours: document.querySelector("#weekHours"),
@@ -980,27 +990,23 @@
       if (!date) return;
       const hours = Math.max(0, Math.floor(readNumber(els.workHours.value)));
       const minutes = Math.max(0, Math.min(59, Math.floor(readNumber(els.workMinutes.value))));
+      const parking = readNumber(els.workParking.value);
       const elapsedMs = ((hours * 60) + minutes) * 60000;
 
-      const existing = state.days.find((day) => day.date === date);
-      if (existing) {
-        existing.note = els.workNote.value.trim() || existing.note;
-        existing.elapsedMs = elapsedMs;
-        existing.startedAt = null;
-      } else {
-        state.days.push({
-          id: crypto.randomUUID(),
-          date,
-          note: els.workNote.value.trim(),
-          elapsedMs,
-          startedAt: null,
-          trips: 0
-        });
-      }
+      state.days.push({
+        id: crypto.randomUUID(),
+        date,
+        note: els.workNote.value.trim(),
+        elapsedMs,
+        startedAt: null,
+        trips: 0,
+        parking
+      });
 
       state.days.sort((a, b) => b.date.localeCompare(a.date));
       els.workHours.value = 0;
       els.workMinutes.value = 0;
+      els.workParking.value = 0;
       els.workNote.value = "";
       persistAndRender();
     });
@@ -1162,7 +1168,7 @@
       return {
         ...defaultState,
         ...value,
-        days: Array.isArray(value?.days) ? value.days : []
+        days: Array.isArray(value?.days) ? value.days.map((day) => ({ ...day, parking: readNumber(day.parking) })) : []
       };
     }
 
@@ -1188,8 +1194,9 @@
       els.sumTrips.textContent = totals.trips;
       els.sumHours.textContent = formatDuration(totals.ms);
       els.sumTripPay.textContent = money(totals.trips * state.tripRate);
+      els.sumParking.textContent = money(totals.parking);
       els.sumPay.textContent = money(totals.pay);
-      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч × ${money(state.hourRate)} + ${totals.trips} поездок × ${money(state.tripRate)} = <strong>${money(totals.pay)}</strong>`;
+      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч × ${money(state.hourRate)} + ${totals.trips} поездок × ${money(state.tripRate)} + паркинг ${money(totals.parking)} = <strong>${money(totals.pay)}</strong>`;
       els.weekLabel.textContent = `${formatShortDate(weekRange.start)} - ${formatShortDate(addDays(weekRange.end, -1))}`;
       els.weekHours.textContent = formatDuration(weekTotals.ms);
       els.weekTrips.textContent = weekTotals.trips;
@@ -1229,9 +1236,13 @@
           <strong class="time-value">${day.trips}</strong>
         </div>
         <div class="metric">
+          <span>Паркинг</span>
+          <strong class="time-value">${money(day.parking || 0)}</strong>
+        </div>
+        <div class="metric">
           <span>К оплате</span>
           <strong class="money-value">${money(payFor(day))}</strong>
-          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(state.hourRate)} + ${day.trips} × ${money(state.tripRate)}</span>
+          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(state.hourRate)} + ${day.trips} × ${money(state.tripRate)} + ${money(day.parking || 0)}</span>
         </div>
         <div class="day-actions">
           <button class="icon-btn" type="button" data-action="edit" data-id="${day.id}" title="Редактировать день" aria-label="Редактировать день">
@@ -1272,6 +1283,10 @@
             Поездки
             <input type="number" data-edit="trips" min="0" step="1" inputmode="numeric" value="${day.trips}">
           </label>
+          <label>
+            Паркинг €
+            <input type="number" data-edit="parking" min="0" step="0.01" inputmode="decimal" value="${day.parking || 0}">
+          </label>
         </div>
         <div class="edit-actions">
           <button class="btn secondary" type="button" data-action="cancel-edit" data-id="${day.id}">Отмена</button>
@@ -1288,12 +1303,6 @@
       const date = card.querySelector('[data-edit="date"]').value;
       if (!date) return;
 
-      const duplicate = state.days.some((item) => item.id !== day.id && item.date === date);
-      if (duplicate) {
-        alert("День с такой датой уже есть.");
-        return;
-      }
-
       if (day.startedAt) {
         day.elapsedMs = currentElapsed(day);
         day.startedAt = null;
@@ -1302,11 +1311,13 @@
       const hours = Math.max(0, Math.floor(readNumber(card.querySelector('[data-edit="hours"]').value)));
       const minutes = Math.max(0, Math.min(59, Math.floor(readNumber(card.querySelector('[data-edit="minutes"]').value))));
       const trips = Math.max(0, Math.floor(readNumber(card.querySelector('[data-edit="trips"]').value)));
+      const parking = readNumber(card.querySelector('[data-edit="parking"]').value);
 
       day.date = date;
       day.note = card.querySelector('[data-edit="note"]').value.trim();
       day.elapsedMs = ((hours * 60) + minutes) * 60000;
       day.trips = trips;
+      day.parking = parking;
       editingDayId = null;
       state.days.sort((a, b) => b.date.localeCompare(a.date));
     }
@@ -1320,13 +1331,14 @@
         const ms = currentElapsed(day);
         acc.ms += ms;
         acc.trips += day.trips;
+        acc.parking += day.parking || 0;
         acc.pay += payFor(day);
         return acc;
-      }, { ms: 0, trips: 0, pay: 0 });
+      }, { ms: 0, trips: 0, parking: 0, pay: 0 });
     }
 
     function payFor(day) {
-      return (currentElapsed(day) / 3600000 * state.hourRate) + (day.trips * state.tripRate);
+      return (currentElapsed(day) / 3600000 * state.hourRate) + (day.trips * state.tripRate) + (day.parking || 0);
     }
 
     function isInRange(day, start, end) {
@@ -1454,12 +1466,13 @@
     }
 
     function exportCsv() {
-      const header = ["Дата", "Заметка", "Время", "Поездки", "Сумма"];
+      const header = ["Дата", "Заметка", "Время", "Поездки", "Паркинг", "Сумма"];
       const rows = state.days.map((day) => [
         day.date,
         day.note || "",
         formatDuration(currentElapsed(day)),
         day.trips,
+        (day.parking || 0).toFixed(2),
         payFor(day).toFixed(2)
       ]);
       const csv = [header, ...rows]

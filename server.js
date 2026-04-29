@@ -204,7 +204,8 @@ function normalizeDay(day) {
     note: String(day.note || "").slice(0, 300),
     elapsedMs: Math.max(0, Math.floor(readPositiveNumber(day.elapsedMs, 0))),
     startedAt: null,
-    trips: Math.max(0, Math.floor(readPositiveNumber(day.trips, 0)))
+    trips: Math.max(0, Math.floor(readPositiveNumber(day.trips, 0))),
+    parking: readPositiveNumber(day.parking, 0)
   };
 }
 
