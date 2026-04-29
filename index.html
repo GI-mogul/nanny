@@ -54,13 +54,13 @@
     }
 
     .app {
-      width: min(1180px, calc(100% - 32px));
+      width: min(1360px, calc(100% - 40px));
       margin: 0 auto;
       padding: calc(28px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));
     }
 
     .auth-strip {
-      width: min(1180px, calc(100% - 32px));
+      width: min(1360px, calc(100% - 40px));
       min-height: 42px;
       display: flex;
       align-items: center;
@@ -143,8 +143,8 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.45fr) 360px;
-      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 400px);
+      gap: 20px;
       align-items: start;
     }
 
@@ -159,7 +159,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(150px, 190px) minmax(86px, 100px) minmax(86px, 100px) 1fr auto;
+      grid-template-columns: minmax(160px, 190px) minmax(90px, 110px) minmax(90px, 110px) minmax(220px, 1fr) auto;
       gap: 10px;
       align-items: end;
       padding: 16px;
@@ -259,8 +259,8 @@
 
     .day-card {
       display: grid;
-      grid-template-columns: minmax(128px, .9fr) minmax(120px, .65fr) minmax(120px, .65fr) minmax(135px, .75fr) auto;
-      gap: 12px;
+      grid-template-columns: minmax(180px, 1.05fr) minmax(104px, .5fr) minmax(94px, .45fr) minmax(220px, 1fr) auto;
+      gap: 14px;
       align-items: center;
       padding: 12px;
       border: 1px solid var(--line);
@@ -354,6 +354,21 @@
     .side-panel {
       display: grid;
       gap: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .side-panel {
+        position: sticky;
+        top: 18px;
+      }
+
+      .days {
+        gap: 8px;
+      }
+
+      .day-card {
+        min-height: 76px;
+      }
     }
 
     .side-section {
@@ -993,8 +1008,6 @@
       if (action === "edit") editingDayId = day.id;
       if (action === "cancel-edit") editingDayId = null;
       if (action === "save-edit") saveEditedDay(day, button.closest(".day-card"));
-      if (action === "trip-plus") day.trips += 1;
-      if (action === "trip-minus") day.trips = Math.max(0, day.trips - 1);
       if (action === "remove" && confirm("Удалить этот день?")) {
         state.days = state.days.filter((item) => item.id !== day.id);
         if (editingDayId === day.id) editingDayId = null;
@@ -1087,15 +1100,7 @@
         </div>
         <div class="metric">
           <span>Поездки</span>
-          <div class="trips">
-            <button class="icon-btn" type="button" data-action="trip-minus" data-id="${day.id}" title="Минус поездка" aria-label="Минус поездка">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
-            </button>
-            <div class="trip-count">${day.trips}</div>
-            <button class="icon-btn" type="button" data-action="trip-plus" data-id="${day.id}" title="Плюс поездка" aria-label="Плюс поездка">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-            </button>
-          </div>
+          <strong class="time-value">${day.trips}</strong>
         </div>
         <div class="metric">
           <span>К оплате</span>
