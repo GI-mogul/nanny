@@ -261,6 +261,14 @@
       padding: 14px;
     }
 
+    .records-panel {
+      display: contents;
+    }
+
+    .records-panel > summary {
+      display: none;
+    }
+
     .day-card {
       display: grid;
       grid-template-columns: minmax(170px, 1fr) minmax(100px, .45fr) minmax(88px, .4fr) minmax(110px, .45fr) minmax(220px, 1fr) auto;
@@ -360,11 +368,13 @@
       gap: 0;
     }
 
-    .advanced-panel {
+    .advanced-panel,
+    .records-panel {
       border-top: 1px solid var(--line);
     }
 
-    .advanced-panel > summary {
+    .advanced-panel > summary,
+    .records-panel > summary {
       min-height: 52px;
       display: flex;
       align-items: center;
@@ -376,14 +386,16 @@
       background: rgba(255, 255, 255, .62);
     }
 
-    .advanced-panel > summary::after {
+    .advanced-panel > summary::after,
+    .records-panel > summary::after {
       content: "+";
       color: var(--accent-dark);
       font-size: 1.2rem;
       line-height: 1;
     }
 
-    .advanced-panel[open] > summary::after {
+    .advanced-panel[open] > summary::after,
+    .records-panel[open] > summary::after {
       content: "-";
     }
 
@@ -638,6 +650,10 @@
         order: 3;
       }
 
+      .records-panel {
+        order: 3;
+      }
+
       .advanced-panel {
         order: 4;
       }
@@ -702,7 +718,8 @@
       .toolbar,
       .days,
       .side-section,
-      .advanced-panel {
+      .advanced-panel,
+      .records-panel {
         padding: 12px;
       }
 
@@ -712,7 +729,7 @@
       }
 
       .toolbar,
-      .days,
+      .records-panel,
       .total-section,
       .advanced-panel {
         width: 100%;
@@ -727,13 +744,20 @@
         border-bottom: 1px solid var(--line);
       }
 
-      .advanced-panel {
+      .advanced-panel,
+      .records-panel {
         padding: 0;
       }
 
-      .advanced-panel > summary {
+      .advanced-panel > summary,
+      .records-panel > summary {
+        display: flex;
         min-height: 54px;
         padding: 0 12px;
+      }
+
+      .records-panel .days {
+        padding: 12px;
       }
 
       .advanced-panel .side-section {
@@ -901,7 +925,13 @@
             Добавить день
           </button>
         </form>
-        <div class="days" id="days"></div>
+        <details class="records-panel" id="recordsPanel" open>
+          <summary>
+            <span>Записи</span>
+            <span id="recordsCount">0</span>
+          </summary>
+          <div class="days" id="days"></div>
+        </details>
       </div>
 
       <aside class="side-panel">
@@ -1122,6 +1152,8 @@
       monthPrev: document.querySelector("#monthPrev"),
       monthNext: document.querySelector("#monthNext"),
       monthLabel: document.querySelector("#monthLabel"),
+      recordsPanel: document.querySelector("#recordsPanel"),
+      recordsCount: document.querySelector("#recordsCount"),
       auditList: document.querySelector("#auditList"),
       auditCount: document.querySelector("#auditCount"),
       advancedPanel: document.querySelector("#advancedPanel"),
@@ -1136,6 +1168,7 @@
     els.tripRate.value = state.tripRate;
     if (window.matchMedia("(max-width: 920px)").matches) {
       els.advancedPanel.open = false;
+      els.recordsPanel.open = false;
     }
     loadServerState();
 
@@ -1382,6 +1415,7 @@
       els.hourRateValue.textContent = money(state.hourRate);
       els.tripRateValue.textContent = money(state.tripRate);
       els.sumDays.textContent = state.days.length;
+      els.recordsCount.textContent = state.days.length;
       els.sumTrips.textContent = totals.trips;
       els.sumHours.textContent = formatDuration(totals.ms);
       els.sumTripPay.textContent = money(totals.trips * state.tripRate);
