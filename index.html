@@ -391,6 +391,27 @@
       gap: 10px;
     }
 
+    .rate-value {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rates-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -747,7 +768,17 @@
       <aside class="side-panel">
         <section class="side-section">
           <h2>Ставки</h2>
-          <div class="rates">
+          <div class="rates" id="ratesView">
+            <div>
+              <label>€ в час</label>
+              <div class="rate-value" id="hourRateValue">13,00 €</div>
+            </div>
+            <div>
+              <label>€ за поездку на машине</label>
+              <div class="rate-value" id="tripRateValue">4,86 €</div>
+            </div>
+          </div>
+          <div class="rates" id="ratesEdit" hidden>
             <label>
               € в час
               <input type="number" id="hourRate" min="0" step="1" inputmode="decimal">
@@ -756,6 +787,17 @@
               € за поездку на машине
               <input type="number" id="tripRate" min="0" step="0.01" inputmode="decimal">
             </label>
+          </div>
+          <div class="rates-actions">
+            <button class="btn secondary" type="button" id="cancelRatesBtn" hidden>Отмена</button>
+            <button class="btn secondary" type="button" id="editRatesBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Редактировать
+            </button>
+            <button class="btn" type="button" id="saveRatesBtn" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              Сохранить
+            </button>
           </div>
           <p class="note">Ставки применяются ко всем добавленным дням и сохраняются на этом устройстве.</p>
         </section>
@@ -890,8 +932,15 @@
       workHours: document.querySelector("#workHours"),
       workMinutes: document.querySelector("#workMinutes"),
       workNote: document.querySelector("#workNote"),
+      ratesView: document.querySelector("#ratesView"),
+      ratesEdit: document.querySelector("#ratesEdit"),
       hourRate: document.querySelector("#hourRate"),
       tripRate: document.querySelector("#tripRate"),
+      hourRateValue: document.querySelector("#hourRateValue"),
+      tripRateValue: document.querySelector("#tripRateValue"),
+      editRatesBtn: document.querySelector("#editRatesBtn"),
+      saveRatesBtn: document.querySelector("#saveRatesBtn"),
+      cancelRatesBtn: document.querySelector("#cancelRatesBtn"),
       days: document.querySelector("#days"),
       topTotal: document.querySelector("#topTotal"),
       sumDays: document.querySelector("#sumDays"),
@@ -956,13 +1005,20 @@
       persistAndRender();
     });
 
-    els.hourRate.addEventListener("input", () => {
-      state.hourRate = readNumber(els.hourRate.value);
-      persistAndRender();
+    els.editRatesBtn.addEventListener("click", () => {
+      setRatesEditing(true);
     });
 
-    els.tripRate.addEventListener("input", () => {
+    els.cancelRatesBtn.addEventListener("click", () => {
+      els.hourRate.value = state.hourRate;
+      els.tripRate.value = state.tripRate;
+      setRatesEditing(false);
+    });
+
+    els.saveRatesBtn.addEventListener("click", () => {
+      state.hourRate = readNumber(els.hourRate.value);
       state.tripRate = readNumber(els.tripRate.value);
+      setRatesEditing(false);
       persistAndRender();
     });
 
@@ -1046,6 +1102,18 @@
       render();
     }
 
+    function setRatesEditing(isEditing) {
+      els.ratesView.hidden = isEditing;
+      els.ratesEdit.hidden = !isEditing;
+      els.editRatesBtn.hidden = isEditing;
+      els.saveRatesBtn.hidden = !isEditing;
+      els.cancelRatesBtn.hidden = !isEditing;
+      if (isEditing) {
+        els.hourRate.value = state.hourRate;
+        els.tripRate.value = state.tripRate;
+      }
+    }
+
     async function loadServerState() {
       try {
         const response = await fetch("/api/state", { credentials: "same-origin" });
@@ -1114,6 +1182,8 @@
       const monthTotals = calculateTotals(state.days.filter((day) => isInRange(day, monthRange.start, monthRange.end)));
 
       els.topTotal.textContent = money(totals.pay);
+      els.hourRateValue.textContent = money(state.hourRate);
+      els.tripRateValue.textContent = money(state.tripRate);
       els.sumDays.textContent = state.days.length;
       els.sumTrips.textContent = totals.trips;
       els.sumHours.textContent = formatDuration(totals.ms);
