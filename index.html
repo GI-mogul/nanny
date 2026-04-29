@@ -26,6 +26,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     html {
       min-width: 320px;
       -webkit-text-size-adjust: 100%;
@@ -356,6 +360,33 @@
       gap: 0;
     }
 
+    .advanced-panel {
+      border-top: 1px solid var(--line);
+    }
+
+    .advanced-panel > summary {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 850;
+      background: rgba(255, 255, 255, .62);
+    }
+
+    .advanced-panel > summary::after {
+      content: "+";
+      color: var(--accent-dark);
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .advanced-panel[open] > summary::after {
+      content: "-";
+    }
+
     @media (min-width: 1024px) {
       .side-panel {
         position: sticky;
@@ -581,11 +612,34 @@
 
     @media (max-width: 920px) {
       .layout {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
       }
 
+      .workbench,
       .side-panel {
-        order: -1;
+        display: contents;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+
+      .total-section {
+        order: 1;
+      }
+
+      .toolbar {
+        order: 2;
+      }
+
+      .days {
+        order: 3;
+      }
+
+      .advanced-panel {
+        order: 4;
       }
 
       .day-card {
@@ -624,6 +678,10 @@
         margin-bottom: 12px;
       }
 
+      .today-total {
+        order: -1;
+      }
+
       .brand {
         align-items: flex-start;
       }
@@ -643,13 +701,47 @@
 
       .toolbar,
       .days,
-      .side-section {
+      .side-section,
+      .advanced-panel {
         padding: 12px;
       }
 
       .today-total {
         width: 100%;
         text-align: left;
+      }
+
+      .toolbar,
+      .days,
+      .total-section,
+      .advanced-panel {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 250, 241, .9);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .toolbar {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .advanced-panel {
+        padding: 0;
+      }
+
+      .advanced-panel > summary {
+        min-height: 54px;
+        padding: 0 12px;
+      }
+
+      .advanced-panel .side-section {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .advanced-panel .side-section:last-of-type {
+        border-bottom: 0;
       }
 
       .day-card {
@@ -813,43 +905,7 @@
       </div>
 
       <aside class="side-panel">
-        <section class="side-section">
-          <h2>Ставки</h2>
-          <div class="rates" id="ratesView">
-            <div>
-              <label>€ в час</label>
-              <div class="rate-value" id="hourRateValue">13,00 €</div>
-            </div>
-            <div>
-              <label>€ за поездку на машине</label>
-              <div class="rate-value" id="tripRateValue">4,86 €</div>
-            </div>
-          </div>
-          <div class="rates" id="ratesEdit" hidden>
-            <label>
-              € в час
-              <input type="number" id="hourRate" min="0" step="1" inputmode="decimal">
-            </label>
-            <label>
-              € за поездку на машине
-              <input type="number" id="tripRate" min="0" step="0.01" inputmode="decimal">
-            </label>
-          </div>
-          <div class="rates-actions">
-            <button class="btn secondary" type="button" id="cancelRatesBtn" hidden>Отмена</button>
-            <button class="btn secondary" type="button" id="editRatesBtn">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Редактировать
-            </button>
-            <button class="btn" type="button" id="saveRatesBtn" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-              Сохранить
-            </button>
-          </div>
-          <p class="note">Ставки применяются ко всем добавленным дням и сохраняются на этом устройстве.</p>
-        </section>
-
-        <section class="side-section">
+        <section class="side-section total-section">
           <h2>Итого</h2>
           <div class="summary-grid">
             <div class="summary-cell">
@@ -878,83 +934,125 @@
             </div>
           </div>
           <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € + паркинг 0 € = <strong>0 €</strong></div>
+        </section>
 
-          <div class="period-summary">
-            <div class="period-box">
-              <div class="period-head">
-                <h3>Итого за неделю</h3>
+        <details class="advanced-panel" id="advancedPanel" open>
+          <summary>Ставки, периоды и история</summary>
+          <section class="side-section">
+            <h2>Ставки</h2>
+            <div class="rates" id="ratesView">
+              <div>
+                <label>€ в час</label>
+                <div class="rate-value" id="hourRateValue">13,00 €</div>
               </div>
-              <div class="period-controls">
-                <button class="icon-btn" type="button" id="weekPrev" title="Предыдущая неделя" aria-label="Предыдущая неделя">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
-                <input type="date" id="weekDate" aria-label="Дата внутри недели">
-                <button class="icon-btn" type="button" id="weekNext" title="Следующая неделя" aria-label="Следующая неделя">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
+              <div>
+                <label>€ за поездку на машине</label>
+                <div class="rate-value" id="tripRateValue">4,86 €</div>
               </div>
-              <div class="period-label" id="weekLabel"></div>
-              <div class="period-stats">
-                <div>
-                  <span>Часов</span>
-                  <strong id="weekHours">0:00</strong>
+            </div>
+            <div class="rates" id="ratesEdit" hidden>
+              <label>
+                € в час
+                <input type="number" id="hourRate" min="0" step="1" inputmode="decimal">
+              </label>
+              <label>
+                € за поездку на машине
+                <input type="number" id="tripRate" min="0" step="0.01" inputmode="decimal">
+              </label>
+            </div>
+            <div class="rates-actions">
+              <button class="btn secondary" type="button" id="cancelRatesBtn" hidden>Отмена</button>
+              <button class="btn secondary" type="button" id="editRatesBtn">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Редактировать
+              </button>
+              <button class="btn" type="button" id="saveRatesBtn" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                Сохранить
+              </button>
+            </div>
+            <p class="note">Ставки применяются ко всем добавленным дням и сохраняются на этом устройстве.</p>
+          </section>
+
+          <section class="side-section">
+            <h2>Периоды</h2>
+            <div class="period-summary">
+              <div class="period-box">
+                <div class="period-head">
+                  <h3>Итого за неделю</h3>
                 </div>
-                <div>
-                  <span>Поездок</span>
-                  <strong id="weekTrips">0</strong>
+                <div class="period-controls">
+                  <button class="icon-btn" type="button" id="weekPrev" title="Предыдущая неделя" aria-label="Предыдущая неделя">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <input type="date" id="weekDate" aria-label="Дата внутри недели">
+                  <button class="icon-btn" type="button" id="weekNext" title="Следующая неделя" aria-label="Следующая неделя">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
                 </div>
-                <div>
-                  <span>Сумма</span>
-                  <strong id="weekPay">0 €</strong>
+                <div class="period-label" id="weekLabel"></div>
+                <div class="period-stats">
+                  <div>
+                    <span>Часов</span>
+                    <strong id="weekHours">0:00</strong>
+                  </div>
+                  <div>
+                    <span>Поездок</span>
+                    <strong id="weekTrips">0</strong>
+                  </div>
+                  <div>
+                    <span>Сумма</span>
+                    <strong id="weekPay">0 €</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="period-box">
+                <div class="period-head">
+                  <h3>Итого за месяц</h3>
+                </div>
+                <div class="period-controls">
+                  <button class="icon-btn" type="button" id="monthPrev" title="Предыдущий месяц" aria-label="Предыдущий месяц">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <input type="month" id="monthDate" aria-label="Месяц">
+                  <button class="icon-btn" type="button" id="monthNext" title="Следующий месяц" aria-label="Следующий месяц">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </div>
+                <div class="period-label" id="monthLabel"></div>
+                <div class="period-stats">
+                  <div>
+                    <span>Часов</span>
+                    <strong id="monthHours">0:00</strong>
+                  </div>
+                  <div>
+                    <span>Поездок</span>
+                    <strong id="monthTrips">0</strong>
+                  </div>
+                  <div>
+                    <span>Сумма</span>
+                    <strong id="monthPay">0 €</strong>
+                  </div>
                 </div>
               </div>
             </div>
+          </section>
 
-            <div class="period-box">
-              <div class="period-head">
-                <h3>Итого за месяц</h3>
-              </div>
-              <div class="period-controls">
-                <button class="icon-btn" type="button" id="monthPrev" title="Предыдущий месяц" aria-label="Предыдущий месяц">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
-                <input type="month" id="monthDate" aria-label="Месяц">
-                <button class="icon-btn" type="button" id="monthNext" title="Следующий месяц" aria-label="Следующий месяц">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              </div>
-              <div class="period-label" id="monthLabel"></div>
-              <div class="period-stats">
-                <div>
-                  <span>Часов</span>
-                  <strong id="monthHours">0:00</strong>
-                </div>
-                <div>
-                  <span>Поездок</span>
-                  <strong id="monthTrips">0</strong>
-                </div>
-                <div>
-                  <span>Сумма</span>
-                  <strong id="monthPay">0 €</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+          <section class="side-section">
+            <button class="btn secondary" type="button" id="exportBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Скачать CSV
+            </button>
+          </section>
 
-        <section class="side-section">
-          <button class="btn secondary" type="button" id="exportBtn">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-            Скачать CSV
-          </button>
-        </section>
-
-        <details class="audit-panel" id="auditPanel">
-          <summary>
-            <span>История действий</span>
-            <span id="auditCount">0</span>
-          </summary>
-          <div class="audit-list" id="auditList"></div>
+          <details class="audit-panel" id="auditPanel">
+            <summary>
+              <span>История действий</span>
+              <span id="auditCount">0</span>
+            </summary>
+            <div class="audit-list" id="auditList"></div>
+          </details>
         </details>
       </aside>
     </section>
@@ -1026,6 +1124,7 @@
       monthLabel: document.querySelector("#monthLabel"),
       auditList: document.querySelector("#auditList"),
       auditCount: document.querySelector("#auditCount"),
+      advancedPanel: document.querySelector("#advancedPanel"),
       exportBtn: document.querySelector("#exportBtn"),
       emptyTemplate: document.querySelector("#emptyTemplate")
     };
@@ -1035,6 +1134,9 @@
     els.monthDate.value = selectedMonth;
     els.hourRate.value = state.hourRate;
     els.tripRate.value = state.tripRate;
+    if (window.matchMedia("(max-width: 920px)").matches) {
+      els.advancedPanel.open = false;
+    }
     loadServerState();
 
     els.form.addEventListener("submit", (event) => {
