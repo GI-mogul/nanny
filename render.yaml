@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: nanny-time-tracker
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ALLOWED_EMAILS
+        sync: false
+      - key: PUBLIC_URL
+        sync: false

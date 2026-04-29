@@ -25,6 +25,8 @@ ALLOWED_EMAILS="first@gmail.com,second@gmail.com,third@gmail.com"
 PUBLIC_URL="https://your-app.onrender.com"
 ```
 
+Если используете `render.yaml`, Render сам создаст поля переменных. Секретные значения нужно заполнить в Dashboard после создания сервиса.
+
 5. В Google Cloud Console добавьте redirect URI:
 
 ```text
