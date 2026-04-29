@@ -159,7 +159,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(150px, 210px) 1fr auto;
+      grid-template-columns: minmax(150px, 190px) minmax(86px, 100px) minmax(86px, 100px) 1fr auto;
       gap: 10px;
       align-items: end;
       padding: 16px;
@@ -259,7 +259,7 @@
 
     .day-card {
       display: grid;
-      grid-template-columns: minmax(128px, .8fr) minmax(148px, .9fr) minmax(120px, .65fr) minmax(135px, .75fr) auto;
+      grid-template-columns: minmax(128px, .9fr) minmax(120px, .65fr) minmax(120px, .65fr) minmax(135px, .75fr) auto;
       gap: 12px;
       align-items: center;
       padding: 12px;
@@ -289,27 +289,28 @@
       gap: 9px;
     }
 
+    .calc-line {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: .84rem;
+      line-height: 1.45;
+    }
+
+    .calc-line strong {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
     .time-value,
     .money-value {
       display: block;
       font-variant-numeric: tabular-nums;
       font-size: 1.2rem;
       font-weight: 800;
-    }
-
-    .timer-toggle {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: var(--accent);
-      color: #fff;
-      flex: 0 0 auto;
-    }
-
-    .timer-toggle.running {
-      background: var(--warm);
     }
 
     .trips {
@@ -580,11 +581,6 @@
         width: auto;
       }
 
-      .timer-toggle {
-        width: 52px;
-        height: 52px;
-      }
-
       .time-value,
       .money-value {
         font-size: 1.28rem;
@@ -662,7 +658,7 @@
         </div>
         <div>
           <h1>Учет времени няни</h1>
-          <p class="subtitle">Рабочие дни, таймер, поездки и расчет оплаты.</p>
+          <p class="subtitle">Рабочие дни, часы, поездки и расчет оплаты.</p>
         </div>
       </div>
       <div class="today-total">
@@ -677,6 +673,14 @@
           <label>
             День работы
             <input type="date" id="workDate" required>
+          </label>
+          <label>
+            Часы
+            <input type="number" id="workHours" min="0" step="1" inputmode="numeric" value="0">
+          </label>
+          <label>
+            Минуты
+            <input type="number" id="workMinutes" min="0" max="59" step="1" inputmode="numeric" value="0">
           </label>
           <label>
             Заметка
@@ -730,6 +734,7 @@
               <strong id="sumPay">0 €</strong>
             </div>
           </div>
+          <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € = <strong>0 €</strong></div>
 
           <div class="period-summary">
             <div class="period-box">
@@ -804,6 +809,8 @@
     const els = {
       form: document.querySelector("#addDayForm"),
       workDate: document.querySelector("#workDate"),
+      workHours: document.querySelector("#workHours"),
+      workMinutes: document.querySelector("#workMinutes"),
       workNote: document.querySelector("#workNote"),
       hourRate: document.querySelector("#hourRate"),
       tripRate: document.querySelector("#tripRate"),
@@ -814,6 +821,7 @@
       sumHours: document.querySelector("#sumHours"),
       sumTripPay: document.querySelector("#sumTripPay"),
       sumPay: document.querySelector("#sumPay"),
+      sumFormula: document.querySelector("#sumFormula"),
       weekHours: document.querySelector("#weekHours"),
       weekTrips: document.querySelector("#weekTrips"),
       weekPay: document.querySelector("#weekPay"),
@@ -832,22 +840,29 @@
       event.preventDefault();
       const date = els.workDate.value;
       if (!date) return;
+      const hours = Math.max(0, Math.floor(readNumber(els.workHours.value)));
+      const minutes = Math.max(0, Math.min(59, Math.floor(readNumber(els.workMinutes.value))));
+      const elapsedMs = ((hours * 60) + minutes) * 60000;
 
       const existing = state.days.find((day) => day.date === date);
       if (existing) {
         existing.note = els.workNote.value.trim() || existing.note;
+        existing.elapsedMs = elapsedMs;
+        existing.startedAt = null;
       } else {
         state.days.push({
           id: crypto.randomUUID(),
           date,
           note: els.workNote.value.trim(),
-          elapsedMs: 0,
+          elapsedMs,
           startedAt: null,
           trips: 0
         });
       }
 
       state.days.sort((a, b) => b.date.localeCompare(a.date));
+      els.workHours.value = 0;
+      els.workMinutes.value = 0;
       els.workNote.value = "";
       persistAndRender();
     });
@@ -870,7 +885,6 @@
       if (!day) return;
 
       const action = button.dataset.action;
-      if (action === "toggle") toggleTimer(day);
       if (action === "edit") editingDayId = day.id;
       if (action === "cancel-edit") editingDayId = null;
       if (action === "save-edit") saveEditedDay(day, button.closest(".day-card"));
@@ -910,22 +924,6 @@
       render();
     }
 
-    function toggleTimer(day) {
-      if (day.startedAt) {
-        day.elapsedMs += Date.now() - day.startedAt;
-        day.startedAt = null;
-        return;
-      }
-
-      state.days.forEach((item) => {
-        if (item.startedAt) {
-          item.elapsedMs += Date.now() - item.startedAt;
-          item.startedAt = null;
-        }
-      });
-      day.startedAt = Date.now();
-    }
-
     function render() {
       els.days.replaceChildren();
 
@@ -945,6 +943,7 @@
       els.sumHours.textContent = formatDuration(totals.ms);
       els.sumTripPay.textContent = money(totals.trips * state.tripRate);
       els.sumPay.textContent = money(totals.pay);
+      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч × ${money(state.hourRate)} + ${totals.trips} поездок × ${money(state.tripRate)} = <strong>${money(totals.pay)}</strong>`;
       els.weekHours.textContent = formatDuration(weekTotals.ms);
       els.weekTrips.textContent = weekTotals.trips;
       els.weekPay.textContent = money(weekTotals.pay);
@@ -952,11 +951,7 @@
       els.monthTrips.textContent = monthTotals.trips;
       els.monthPay.textContent = money(monthTotals.pay);
 
-      const hasRunning = state.days.some((day) => day.startedAt);
-      if (hasRunning && !tick) {
-        tick = setInterval(render, 1000);
-      }
-      if (!hasRunning && tick) {
+      if (tick) {
         clearInterval(tick);
         tick = null;
       }
@@ -972,25 +967,14 @@
         return card;
       }
 
-      const runningClass = day.startedAt ? " running" : "";
-      const toggleTitle = day.startedAt ? "Остановить" : "Старт";
-      const toggleIcon = day.startedAt
-        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>'
-        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
-
       card.innerHTML = `
         <div class="day-date">
           <strong>${escapeHtml(formatDate(day.date))}</strong>
           <span>${escapeHtml(day.note || "Без заметки")}</span>
         </div>
-        <div class="timer">
-          <button class="timer-toggle${runningClass}" type="button" data-action="toggle" data-id="${day.id}" title="${toggleTitle}" aria-label="${toggleTitle}">
-            ${toggleIcon}
-          </button>
-          <div class="metric">
-            <span>Время</span>
-            <strong class="time-value">${formatDuration(currentElapsed(day))}</strong>
-          </div>
+        <div class="metric">
+          <span>Время</span>
+          <strong class="time-value">${formatDuration(currentElapsed(day))}</strong>
         </div>
         <div class="metric">
           <span>Поездки</span>
@@ -1007,6 +991,7 @@
         <div class="metric">
           <span>К оплате</span>
           <strong class="money-value">${money(payFor(day))}</strong>
+          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(state.hourRate)} + ${day.trips} × ${money(state.tripRate)}</span>
         </div>
         <div class="day-actions">
           <button class="icon-btn" type="button" data-action="edit" data-id="${day.id}" title="Редактировать день" aria-label="Редактировать день">
@@ -1141,6 +1126,14 @@
       const hours = Math.floor(totalMinutes / 60);
       const minutes = String(totalMinutes % 60).padStart(2, "0");
       return `${hours}:${minutes}`;
+    }
+
+    function formatDecimalHours(ms) {
+      const hours = ms / 3600000;
+      return new Intl.NumberFormat("ru-RU", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(hours);
     }
 
     function formatDate(value) {
