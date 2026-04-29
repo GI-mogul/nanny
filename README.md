@@ -21,6 +21,7 @@ Start Command: npm start
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
 SESSION_SECRET="long-random-string"
+SESSION_TTL_SECONDS="604800"
 ALLOWED_EMAILS="first@gmail.com,second@gmail.com,third@gmail.com"
 PUBLIC_URL="https://your-app.onrender.com"
 ```

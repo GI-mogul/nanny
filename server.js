@@ -11,6 +11,8 @@ const PUBLIC_URL = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL;
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
+const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 7 * 24 * 60 * 60);
+const SESSION_STORE_PATH = process.env.SESSION_STORE_PATH || path.join(__dirname, ".sessions.json");
 const ALLOWED_EMAILS = new Set(
   (process.env.ALLOWED_EMAILS || "")
     .split(",")
@@ -24,6 +26,8 @@ const publicFiles = new Map([
   ["/", "index.html"],
   ["/index.html", "index.html"]
 ]);
+
+loadSessions();
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
@@ -96,10 +100,33 @@ function currentUser(req) {
   const session = sessions.get(sessionId);
   if (!session || session.expiresAt < Date.now()) {
     sessions.delete(sessionId);
+    saveSessions();
     return null;
   }
 
   return session.user;
+}
+
+function loadSessions() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(SESSION_STORE_PATH, "utf8"));
+    for (const [sessionId, session] of Object.entries(saved)) {
+      if (session?.expiresAt > Date.now() && session?.user?.email) {
+        sessions.set(sessionId, session);
+      }
+    }
+  } catch {
+    // No saved sessions yet.
+  }
+}
+
+function saveSessions() {
+  const activeSessions = Object.fromEntries(
+    [...sessions.entries()].filter(([, session]) => session.expiresAt > Date.now())
+  );
+  fs.writeFile(SESSION_STORE_PATH, JSON.stringify(activeSessions), (error) => {
+    if (error) console.error("Failed to save sessions:", error.message);
+  });
 }
 
 function requireConfig(res) {
@@ -195,13 +222,14 @@ async function googleCallback(req, res, url) {
     const sessionId = crypto.randomBytes(32).toString("base64url");
     sessions.set(sessionId, {
       user: { email, name: claims.name || email },
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
+      expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000
     });
+    saveSessions();
 
     redirect(res, "/", {
       "Set-Cookie": [
         clearCookie("nanny_oauth_state"),
-        makeCookie("nanny_session", sessionId, 7 * 24 * 60 * 60, publicBaseUrl(req).startsWith("https://"))
+        makeCookie("nanny_session", sessionId, SESSION_TTL_SECONDS, publicBaseUrl(req).startsWith("https://"))
       ]
     });
   } catch (error) {
@@ -296,6 +324,11 @@ const server = http.createServer((req, res) => {
   }
 
   if (url.pathname === "/logout") {
+    const sessionId = readSignedCookie(req, "nanny_session");
+    if (sessionId) {
+      sessions.delete(sessionId);
+      saveSessions();
+    }
     redirect(res, "/login", { "Set-Cookie": clearCookie("nanny_session") });
     return;
   }
