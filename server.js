@@ -24,7 +24,6 @@ const ALLOWED_EMAILS = new Set(
 );
 
 const sessions = new Map();
-const oauthStates = new Map();
 const publicFiles = new Map([
   ["/", "index.html"],
   ["/index.html", "index.html"]
@@ -367,8 +366,6 @@ function googleAuth(req, res) {
   if (requireConfig(res)) return;
 
   const state = crypto.randomBytes(24).toString("base64url");
-  oauthStates.set(state, Date.now() + 10 * 60 * 1000);
-
   const redirectUri = `${publicBaseUrl(req)}/auth/google/callback`;
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", CLIENT_ID);
@@ -389,14 +386,10 @@ async function googleCallback(req, res, url) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const cookieState = readSignedCookie(req, "nanny_oauth_state");
-  const stateExpiresAt = oauthStates.get(state);
-
-  if (!code || !state || state !== cookieState || !stateExpiresAt || stateExpiresAt < Date.now()) {
+  if (!code || !state || state !== cookieState) {
     send(res, 400, "Ошибка входа: неверное состояние авторизации.");
     return;
   }
-  oauthStates.delete(state);
-
   try {
     const redirectUri = `${publicBaseUrl(req)}/auth/google/callback`;
     const token = await postForm("https://oauth2.googleapis.com/token", {
