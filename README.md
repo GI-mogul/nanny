@@ -25,7 +25,7 @@ GOOGLE_CLIENT_SECRET="..."
 SESSION_SECRET="long-random-string"
 SESSION_TTL_SECONDS="604800"
 DATABASE_URL="postgres://..."
-ALLOWED_EMAILS="first@gmail.com,second@gmail.com,third@gmail.com"
+ALLOWED_EMAILS="first@gmail.com, second@gmail.com, third@gmail.com"
 PUBLIC_URL="https://your-app.onrender.com"
 ```
 
@@ -80,7 +80,7 @@ http://127.0.0.1:3000/auth/google/callback
 export GOOGLE_CLIENT_ID="..."
 export GOOGLE_CLIENT_SECRET="..."
 export SESSION_SECRET="long-random-string"
-export ALLOWED_EMAILS="first@gmail.com,second@gmail.com,third@gmail.com"
+export ALLOWED_EMAILS="first@gmail.com, second@gmail.com, third@gmail.com"
 export PUBLIC_URL="http://127.0.0.1:3000"
 ```
 
