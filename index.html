@@ -7,45 +7,63 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f2ea;
+      --bg: #f5f1e9;
       --panel: #fffaf1;
-      --card: #ffffff;
+      --panel-strong: #ffffff;
       --ink: #24302f;
-      --muted: #687471;
+      --muted: #6b7471;
       --line: #ded7ca;
       --accent: #2f7d6f;
       --accent-dark: #205b51;
+      --warm: #d9824b;
       --danger: #b94848;
       --shadow: 0 18px 42px rgba(57, 49, 38, .12);
+      --radius: 8px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    * { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    html { min-width: 320px; -webkit-text-size-adjust: 100%; }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      min-width: 320px;
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       overflow-x: hidden;
-      background: linear-gradient(145deg, #f8f4ec 0%, #eef3f0 52%, #f7efe4 100%);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(47, 125, 111, .12), transparent 32rem),
+        linear-gradient(145deg, #f8f4ec 0%, #eef3f0 48%, #f7efe4 100%);
       color: var(--ink);
       -webkit-tap-highlight-color: rgba(47, 125, 111, .16);
     }
-    button, input, select { font: inherit; touch-action: manipulation; }
-    button { border: 0; cursor: pointer; }
-    input, select {
-      width: 100%;
-      min-height: 46px;
-      border: 1px solid #cfc7b8;
-      border-radius: 6px;
-      padding: 0 11px;
-      background: #fffdf8;
-      color: var(--ink);
-      outline: none;
-      font-size: 16px;
+
+    button,
+    input,
+    select {
+      font: inherit;
+      touch-action: manipulation;
     }
-    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 125, 111, .15); }
-    label { display: grid; gap: 6px; color: var(--muted); font-size: .82rem; font-weight: 700; }
-    svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1360px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: calc(28px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));
+    }
+
     .auth-strip {
       width: min(1360px, calc(100% - 40px));
       min-height: 42px;
@@ -58,49 +76,307 @@
       color: var(--muted);
       font-size: .86rem;
     }
-    .auth-strip a { color: var(--accent-dark); font-weight: 800; text-decoration: none; }
-    .app { width: min(1360px, calc(100% - 40px)); margin: 0 auto; padding: 22px 0 calc(28px + env(safe-area-inset-bottom)); }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
-    .brand { min-width: 0; }
-    h1 { margin: 0; font-size: clamp(1.55rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 0; }
-    .subtitle { margin: 5px 0 0; color: var(--muted); }
-    .top-total { min-width: 210px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.72); text-align: right; }
-    .top-total span { display: block; color: var(--muted); font-size: .82rem; }
-    .top-total strong { font-size: 1.35rem; }
-    .layout { display: grid; grid-template-columns: minmax(720px, 1fr) minmax(360px, 400px); gap: 20px; align-items: start; }
-    .workbench, .side-panel, .toolbar, .total-section, details.panel {
-      border: 1px solid var(--line);
+
+    .auth-strip a {
+      color: var(--accent-dark);
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    .auth-strip + .app {
+      padding-top: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
       border-radius: 8px;
-      background: rgba(255, 250, 241, .9);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      letter-spacing: 0;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: .98rem;
+    }
+
+    .today-total {
+      min-width: 210px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .72);
+      text-align: right;
+    }
+
+    .today-total span {
+      display: block;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .today-total strong {
+      font-size: 1.35rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(760px, 1fr) minmax(360px, 400px);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .workbench,
+    .side-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 241, .88);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .workbench { display: grid; gap: 12px; background: transparent; border: 0; box-shadow: none; overflow: visible; }
-    .toolbar { display: grid; grid-template-columns: minmax(150px, 180px) repeat(2, minmax(82px, 96px)) minmax(96px, 116px) minmax(116px, 132px) minmax(180px, 1fr) auto; gap: 10px; align-items: end; padding: 16px; }
-    .btn { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 6px; padding: 0 14px; background: var(--accent); color: #fff; font-weight: 800; white-space: nowrap; }
-    .btn:hover { background: var(--accent-dark); }
-    .btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
-    .btn.danger { background: var(--danger); }
-    .icon-btn { width: 44px; height: 44px; display: inline-grid; place-items: center; border-radius: 6px; background: #fff; border: 1px solid var(--line); color: var(--ink); }
-    .side-panel { display: grid; gap: 0; position: sticky; top: 18px; }
-    .side-section, .total-section { padding: 16px; border-bottom: 1px solid var(--line); }
-    .side-section:last-child { border-bottom: 0; }
-    h2 { margin: 0 0 12px; font-size: 1rem; }
-    .summary-grid, .rates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .cell, .rate-value, .period-box, .audit-item {
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(150px, 180px) minmax(82px, 96px) minmax(82px, 96px) minmax(96px, 116px) minmax(116px, 132px) minmax(190px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .65);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 650;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #cfc7b8;
+      border-radius: 6px;
+      padding: 0 11px;
+      background: #fffdf8;
+      color: var(--ink);
+      outline: none;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47, 125, 111, .15);
+    }
+
+    .btn {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 6px;
+      padding: 0 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--accent-dark);
+    }
+
+    .btn.secondary {
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn.secondary:hover {
+      background: #f5f0e7;
+    }
+
+    .btn.danger {
+      background: var(--danger);
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      flex: 0 0 auto;
+    }
+
+    .icon-btn:hover {
+      border-color: #b8aa96;
+      background: #f8f2e8;
+    }
+
+    svg {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .days {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .records-panel {
+      display: contents;
+    }
+
+    .records-panel > summary {
+      display: none;
+    }
+
+    .day-card {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(94px, .42fr) minmax(78px, .35fr) minmax(96px, .42fr) minmax(102px, .42fr) minmax(220px, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-strong);
+    }
+
+    .day-card.editing {
+      grid-template-columns: 1fr;
+    }
+
+    .day-date strong {
+      display: block;
+      font-size: 1rem;
+    }
+
+    .day-date span,
+    .metric span {
+      color: var(--muted);
+      font-size: .81rem;
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .calc-line {
+      margin-top: 10px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 7px;
-      background: #fff;
-      padding: 11px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: .84rem;
+      line-height: 1.45;
     }
-    .cell { min-height: 78px; }
-    .cell span, .period-stats span, .audit-item span, .day-card span { display: block; color: var(--muted); font-size: .78rem; }
-    .cell strong, .period-stats strong, .rate-value strong { font-size: 1.14rem; font-variant-numeric: tabular-nums; }
-    .total-cell { grid-column: 1 / -1; background: #223531; border-color: #223531; color: #fff; }
-    .total-cell span { color: rgba(255,255,255,.72); }
-    .formula { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--muted); font-size: .84rem; line-height: 1.45; }
-    .formula strong { color: var(--ink); }
-    details.panel > summary, .audit-panel > summary {
+
+    .calc-line strong {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .time-value,
+    .money-value {
+      display: block;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .trips {
+      display: grid;
+      grid-template-columns: 44px minmax(42px, 1fr) 44px;
+      align-items: center;
+      gap: 6px;
+      min-width: 120px;
+    }
+
+    .trip-count {
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: #f5f0e7;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .day-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .edit-grid {
+      display: grid;
+      grid-template-columns: minmax(130px, .75fr) minmax(160px, 1fr) minmax(82px, .42fr) minmax(82px, .42fr) minmax(96px, .5fr) minmax(96px, .5fr) minmax(108px, .55fr);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 0;
+    }
+
+    .advanced-panel,
+    .records-panel {
+      border-top: 1px solid var(--line);
+    }
+
+    .advanced-panel > summary,
+    .records-panel > summary {
       min-height: 52px;
       display: flex;
       align-items: center;
@@ -109,51 +385,499 @@
       padding: 0 16px;
       cursor: pointer;
       font-weight: 850;
-      background: rgba(255,255,255,.65);
+      background: rgba(255, 255, 255, .62);
     }
-    details.panel > summary::after, .audit-panel > summary::after { content: "+"; color: var(--accent-dark); font-size: 1.2rem; }
-    details.panel[open] > summary::after, .audit-panel[open] > summary::after { content: "-"; }
-    .days { display: grid; gap: 10px; padding: 14px; }
-    .day-card { display: grid; grid-template-columns: minmax(150px, 1fr) repeat(4, minmax(80px, .45fr)) minmax(210px, 1fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
-    .day-card.editing { grid-template-columns: 1fr; }
-    .day-card strong { display: block; font-variant-numeric: tabular-nums; }
-    .day-actions, .rate-actions, .edit-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-    .edit-grid { display: grid; grid-template-columns: minmax(130px, .75fr) minmax(160px, 1fr) repeat(5, minmax(88px, .5fr)); gap: 10px; align-items: end; }
-    .period-summary { display: grid; gap: 12px; }
-    .period-controls { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; align-items: center; }
-    .period-label { margin: 8px 0 10px; color: var(--muted); font-size: .78rem; }
-    .period-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .audit-list { display: grid; gap: 8px; max-height: 260px; overflow: auto; padding: 0 16px 16px; }
-    .empty { padding: 36px 18px; text-align: center; color: var(--muted); }
-    .note { margin: 10px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+
+    .advanced-panel > summary::after,
+    .records-panel > summary::after {
+      content: "+";
+      color: var(--accent-dark);
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .advanced-panel[open] > summary::after,
+    .records-panel[open] > summary::after {
+      content: "-";
+    }
+
+    @media (min-width: 1024px) {
+      .side-panel {
+        position: sticky;
+        top: 18px;
+      }
+
+      .days {
+        gap: 8px;
+      }
+
+      .day-card {
+        min-height: 76px;
+      }
+    }
+
+    .side-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .side-section:last-child {
+      border-bottom: 0;
+    }
+
+    .side-section h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .rates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .rate-value {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rates-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .summary-cell {
+      min-height: 82px;
+      padding: 12px;
+      border-radius: 7px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+    }
+
+    .summary-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: .78rem;
+      margin-bottom: 6px;
+    }
+
+    .summary-cell strong {
+      font-size: 1.22rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .period-summary {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .period-box {
+      padding: 12px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .period-box h3 {
+      margin: 0 0 10px;
+      font-size: .93rem;
+    }
+
+    .period-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .period-head h3 {
+      margin: 0;
+    }
+
+    .period-controls {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .period-controls input {
+      min-height: 44px;
+    }
+
+    .period-label {
+      color: var(--muted);
+      font-size: .78rem;
+      margin-bottom: 10px;
+    }
+
+    .period-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .period-stats span {
+      display: block;
+      color: var(--muted);
+      font-size: .75rem;
+      margin-bottom: 4px;
+    }
+
+    .period-stats strong {
+      display: block;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .audit-panel {
+      border-top: 1px solid var(--line);
+    }
+
+    .audit-panel summary {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .audit-list {
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+      padding: 0 16px 16px;
+    }
+
+    .audit-item {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+    }
+
+    .audit-item strong {
+      display: block;
+      font-size: .86rem;
+    }
+
+    .audit-item span {
+      display: block;
+      color: var(--muted);
+      font-size: .76rem;
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    .total-cell {
+      grid-column: 1 / -1;
+      background: #223531;
+      color: #fff;
+      border-color: #223531;
+    }
+
+    .total-cell span {
+      color: rgba(255, 255, 255, .72);
+    }
+
+    .empty {
+      padding: 46px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty svg {
+      width: 54px;
+      height: 54px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: .84rem;
+      line-height: 1.45;
+      margin: 10px 0 0;
+    }
+
     @media (max-width: 920px) {
-      .app, .auth-strip { width: min(calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 1180px); }
-      .app { padding-top: 14px; }
-      .topbar { display: grid; gap: 12px; margin-bottom: 12px; }
-      .top-total { order: -1; width: 100%; text-align: left; }
-      .layout { display: flex; flex-direction: column; }
-      .side-panel { display: contents; position: static; border: 0; box-shadow: none; background: transparent; }
-      .total-section { order: 1; width: 100%; border-radius: 8px; background: rgba(255,250,241,.9); box-shadow: var(--shadow); }
-      .workbench { display: contents; }
-      .toolbar { order: 2; width: 100%; grid-template-columns: 1fr; padding: 12px; }
-      .records-panel { order: 3; width: 100%; }
-      .advanced-panel { order: 4; width: 100%; }
-      .day-card { grid-template-columns: 1fr; }
-      .edit-grid { grid-template-columns: 1fr; }
-      .day-actions .icon-btn { margin-left: auto; }
+      .layout {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .workbench,
+      .side-panel {
+        display: contents;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+
+      .total-section {
+        order: 1;
+      }
+
+      .toolbar {
+        order: 2;
+      }
+
+      .days {
+        order: 3;
+      }
+
+      .records-panel {
+        order: 3;
+      }
+
+      .advanced-panel {
+        order: 4;
+      }
+
+      .day-card {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .edit-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .day-actions {
+        grid-column: 1 / -1;
+      }
     }
-    @media (max-width: 520px) {
-      h1 { font-size: 1.45rem; }
-      .subtitle { font-size: .9rem; }
-      .summary-grid, .rates, .period-stats { grid-template-columns: 1fr; }
-      .total-cell { grid-column: auto; }
-      .btn { width: 100%; }
-      .icon-btn { width: 48px; height: 48px; }
+
+    @media (max-width: 640px) {
+      .app {
+        width: min(calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 1180px);
+        padding: calc(14px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom));
+      }
+
+      .auth-strip {
+        width: min(calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 1180px);
+        justify-content: space-between;
+        padding-top: calc(8px + env(safe-area-inset-top));
+      }
+
+      .topbar,
+      .toolbar {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .topbar {
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .today-total {
+        order: -1;
+      }
+
+      .brand {
+        align-items: flex-start;
+      }
+
+      .brand-mark {
+        width: 40px;
+        height: 40px;
+      }
+
+      h1 {
+        font-size: 1.45rem;
+      }
+
+      .subtitle {
+        font-size: .9rem;
+      }
+
+      .toolbar,
+      .days,
+      .side-section,
+      .advanced-panel,
+      .records-panel {
+        padding: 12px;
+      }
+
+      .today-total {
+        width: 100%;
+        text-align: left;
+      }
+
+      .toolbar,
+      .records-panel,
+      .total-section,
+      .advanced-panel {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 250, 241, .9);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .toolbar {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .advanced-panel,
+      .records-panel {
+        padding: 0;
+      }
+
+      .advanced-panel > summary,
+      .records-panel > summary {
+        display: flex;
+        min-height: 54px;
+        padding: 0 12px;
+      }
+
+      .records-panel .days {
+        padding: 12px;
+      }
+
+      .advanced-panel .side-section {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .advanced-panel .side-section:last-of-type {
+        border-bottom: 0;
+      }
+
+      .day-card {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 12px;
+      }
+
+      .edit-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .timer,
+      .day-actions,
+      .trips {
+        justify-content: space-between;
+      }
+
+      .timer {
+        padding: 10px;
+        border-radius: 7px;
+        background: #f7f2e9;
+      }
+
+      .trips {
+        grid-template-columns: 48px minmax(72px, 1fr) 48px;
+        min-width: 0;
+        width: 100%;
+      }
+
+      .icon-btn,
+      .trip-count {
+        width: 48px;
+        height: 48px;
+      }
+
+      .trip-count {
+        width: auto;
+      }
+
+      .time-value,
+      .money-value {
+        font-size: 1.28rem;
+      }
+
+      .day-actions .icon-btn {
+        margin-left: auto;
+      }
+
+      .edit-actions .btn {
+        flex: 1 1 140px;
+      }
+
+      .rates,
+      .summary-grid,
+      .period-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .period-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .total-cell {
+        grid-column: auto;
+      }
     }
+
+    @media (max-width: 430px) {
+      .app {
+        width: min(calc(100% - 14px - env(safe-area-inset-left) - env(safe-area-inset-right)), 1180px);
+      }
+
+      .auth-strip {
+        width: min(calc(100% - 14px - env(safe-area-inset-left) - env(safe-area-inset-right)), 1180px);
+      }
+
+      .workbench,
+      .side-panel,
+      .day-card {
+        border-radius: 7px;
+      }
+
+      .brand-mark {
+        display: none;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .summary-cell {
+        min-height: 72px;
+      }
+    }
+
     @media (min-width: 390px) and (max-width: 640px) {
-      .summary-grid, .rates { grid-template-columns: 1fr 1fr; }
-      .period-stats { grid-template-columns: repeat(3, 1fr); }
-      .total-cell { grid-column: 1 / -1; }
+      .rates,
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .period-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .total-cell {
+        grid-column: 1 / -1;
+      }
     }
   </style>
 </head>
@@ -161,120 +885,308 @@
   <main class="app">
     <header class="topbar">
       <div class="brand">
-        <h1>Учет времени няни</h1>
-        <p class="subtitle">Рабочие дни, часы, поездки и расчет оплаты.</p>
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 8v5l3 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.4 19.6 4 22"/><path d="m20 22-2.4-2.4"/><circle cx="12" cy="13" r="8"/></svg>
+        </div>
+        <div>
+          <h1>Учет времени няни</h1>
+          <p class="subtitle">Рабочие дни, часы, поездки и расчет оплаты.</p>
+        </div>
       </div>
-      <div class="top-total"><span>К оплате всего</span><strong id="topTotal">0 €</strong></div>
+      <div class="today-total">
+        <span>К оплате всего</span>
+        <strong id="topTotal">0 €</strong>
+      </div>
     </header>
 
-    <section class="layout">
+    <section class="layout" aria-label="Учет смен">
       <div class="workbench">
-        <form class="toolbar" id="addForm">
-          <label>День работы<input type="date" id="workDate" required></label>
-          <label>Часы<input type="number" id="workHours" min="0" step="1" inputmode="numeric" value="0"></label>
-          <label>Минуты<input type="number" id="workMinutes" min="0" max="59" step="1" inputmode="numeric" value="0"></label>
-          <label>Паркинг €<input type="number" id="workParking" min="0" step="0.01" inputmode="decimal" value="0"></label>
-          <label>Ночевка<select id="workOvernight"><option value="0" selected>0 €</option><option value="100">100 €</option></select></label>
-          <label>Заметка<input type="text" id="workNote" placeholder="Например: вечер, садик"></label>
-          <button class="btn" type="submit"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Добавить день</button>
+        <form class="toolbar" id="addDayForm">
+          <label>
+            День работы
+            <input type="date" id="workDate" required>
+          </label>
+          <label>
+            Часы
+            <input type="number" id="workHours" min="0" step="1" inputmode="numeric" value="0">
+          </label>
+          <label>
+            Минуты
+            <input type="number" id="workMinutes" min="0" max="59" step="1" inputmode="numeric" value="0">
+          </label>
+          <label>
+            Паркинг €
+            <input type="number" id="workParking" min="0" step="0.01" inputmode="decimal" value="0">
+          </label>
+          <label>
+            Ночевка
+            <select id="workOvernight">
+              <option value="0" selected>0 €</option>
+              <option value="100">100 €</option>
+            </select>
+          </label>
+          <label>
+            Заметка
+            <input type="text" id="workNote" placeholder="Например: вечер, садик, выходной">
+          </label>
+          <button class="btn" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            Добавить день
+          </button>
         </form>
-        <details class="panel records-panel" id="recordsPanel" open>
-          <summary><span>Записи</span><span id="recordsCount">0</span></summary>
-          <div class="days" id="days"></div>
-        </details>
+        <details class="records-panel" id="recordsPanel" open>
+          <summary>
+            <span>Записи</span>
+            <span id="recordsCount">0</span>
+          </summary>
+        <div class="days" id="days"></div>
+      </details>
       </div>
 
       <aside class="side-panel">
-        <section class="total-section">
+        <section class="side-section total-section">
           <h2>Итого</h2>
           <div class="summary-grid">
-            <div class="cell"><span>Дней</span><strong id="sumDays">0</strong></div>
-            <div class="cell"><span>Поездок</span><strong id="sumTrips">0</strong></div>
-            <div class="cell"><span>Часов</span><strong id="sumHours">0:00</strong></div>
-            <div class="cell"><span>За поездки</span><strong id="sumTripPay">0 €</strong></div>
-            <div class="cell"><span>Паркинг</span><strong id="sumParking">0 €</strong></div>
-            <div class="cell"><span>Ночевки</span><strong id="sumOvernight">0 €</strong></div>
-            <div class="cell total-cell"><span>Общая сумма</span><strong id="sumPay">0 €</strong></div>
+            <div class="summary-cell">
+              <span>Дней</span>
+              <strong id="sumDays">0</strong>
+            </div>
+            <div class="summary-cell">
+              <span>Поездок</span>
+              <strong id="sumTrips">0</strong>
+            </div>
+            <div class="summary-cell">
+              <span>Часов</span>
+              <strong id="sumHours">0:00</strong>
+            </div>
+            <div class="summary-cell">
+              <span>За поездки</span>
+              <strong id="sumTripPay">0 €</strong>
+            </div>
+            <div class="summary-cell">
+              <span>Паркинг</span>
+              <strong id="sumParking">0 €</strong>
+            </div>
+            <div class="summary-cell">
+              <span>Ночевки</span>
+              <strong id="sumOvernight">0 €</strong>
+            </div>
+            <div class="summary-cell total-cell">
+              <span>Общая сумма</span>
+              <strong id="sumPay">0 €</strong>
+            </div>
           </div>
-          <div class="formula" id="sumFormula">0 ч x 13,00 € + 0 поездок x 4,86 € + паркинг 0 € + ночевки 0 € = <strong>0 €</strong></div>
-          <div id="emptyMount"></div>
+          <div class="calc-line" id="sumFormula">0 ч × 13,00 € + 0 поездок × 4,86 € + паркинг 0 € + ночевки 0 € = <strong>0 €</strong></div>
+          <div id="emptyStateMount"></div>
         </section>
 
-        <details class="panel advanced-panel" id="advancedPanel" open>
+        <details class="advanced-panel" id="advancedPanel" open>
           <summary>Ставки, периоды и история</summary>
           <section class="side-section">
             <h2>Ставки</h2>
             <div class="rates" id="ratesView">
-              <div><label>€ в час</label><div class="rate-value"><strong id="hourRateValue">13,00 €</strong></div></div>
-              <div><label>€ за поездку</label><div class="rate-value"><strong id="tripRateValue">4,86 €</strong></div></div>
+              <div>
+                <label>€ в час</label>
+                <div class="rate-value" id="hourRateValue">13,00 €</div>
+              </div>
+              <div>
+                <label>€ за поездку на машине</label>
+                <div class="rate-value" id="tripRateValue">4,86 €</div>
+              </div>
             </div>
             <div class="rates" id="ratesEdit" hidden>
-              <label>€ в час<input type="number" id="hourRate" min="0" step="1" inputmode="decimal"></label>
-              <label>€ за поездку<input type="number" id="tripRate" min="0" step="0.01" inputmode="decimal"></label>
+              <label>
+                € в час
+                <input type="number" id="hourRate" min="0" step="1" inputmode="decimal">
+              </label>
+              <label>
+                € за поездку на машине
+                <input type="number" id="tripRate" min="0" step="0.01" inputmode="decimal">
+              </label>
             </div>
-            <div class="rate-actions" style="margin-top:12px">
-              <button class="btn secondary" type="button" id="cancelRates" hidden>Отмена</button>
-              <button class="btn secondary" type="button" id="editRates">Редактировать</button>
-              <button class="btn" type="button" id="saveRates" hidden>Сохранить</button>
+            <div class="rates-actions">
+              <button class="btn secondary" type="button" id="cancelRatesBtn" hidden>Отмена</button>
+              <button class="btn secondary" type="button" id="editRatesBtn">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Редактировать
+              </button>
+              <button class="btn" type="button" id="saveRatesBtn" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                Сохранить
+              </button>
             </div>
-            <p class="note">Ставки меняются только после нажатия "Редактировать".</p>
+            <p class="note">Ставки применяются ко всем добавленным дням и сохраняются на этом устройстве.</p>
           </section>
 
           <section class="side-section">
             <h2>Периоды</h2>
             <div class="period-summary">
               <div class="period-box">
-                <h3>Итого за неделю</h3>
-                <div class="period-controls"><button class="icon-btn" type="button" id="weekPrev"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><input type="date" id="weekDate"><button class="icon-btn" type="button" id="weekNext"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
+                <div class="period-head">
+                  <h3>Итого за неделю</h3>
+                </div>
+                <div class="period-controls">
+                  <button class="icon-btn" type="button" id="weekPrev" title="Предыдущая неделя" aria-label="Предыдущая неделя">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <input type="date" id="weekDate" aria-label="Дата внутри недели">
+                  <button class="icon-btn" type="button" id="weekNext" title="Следующая неделя" aria-label="Следующая неделя">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </div>
                 <div class="period-label" id="weekLabel"></div>
-                <div class="period-stats"><div><span>Часов</span><strong id="weekHours">0:00</strong></div><div><span>Поездок</span><strong id="weekTrips">0</strong></div><div><span>Сумма</span><strong id="weekPay">0 €</strong></div></div>
+                <div class="period-stats">
+                  <div>
+                    <span>Часов</span>
+                    <strong id="weekHours">0:00</strong>
+                  </div>
+                  <div>
+                    <span>Поездок</span>
+                    <strong id="weekTrips">0</strong>
+                  </div>
+                  <div>
+                    <span>Сумма</span>
+                    <strong id="weekPay">0 €</strong>
+                  </div>
+                </div>
               </div>
+
               <div class="period-box">
-                <h3>Итого за месяц</h3>
-                <div class="period-controls"><button class="icon-btn" type="button" id="monthPrev"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><input type="month" id="monthDate"><button class="icon-btn" type="button" id="monthNext"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
+                <div class="period-head">
+                  <h3>Итого за месяц</h3>
+                </div>
+                <div class="period-controls">
+                  <button class="icon-btn" type="button" id="monthPrev" title="Предыдущий месяц" aria-label="Предыдущий месяц">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <input type="month" id="monthDate" aria-label="Месяц">
+                  <button class="icon-btn" type="button" id="monthNext" title="Следующий месяц" aria-label="Следующий месяц">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </div>
                 <div class="period-label" id="monthLabel"></div>
-                <div class="period-stats"><div><span>Часов</span><strong id="monthHours">0:00</strong></div><div><span>Поездок</span><strong id="monthTrips">0</strong></div><div><span>Сумма</span><strong id="monthPay">0 €</strong></div></div>
+                <div class="period-stats">
+                  <div>
+                    <span>Часов</span>
+                    <strong id="monthHours">0:00</strong>
+                  </div>
+                  <div>
+                    <span>Поездок</span>
+                    <strong id="monthTrips">0</strong>
+                  </div>
+                  <div>
+                    <span>Сумма</span>
+                    <strong id="monthPay">0 €</strong>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="side-section"><button class="btn secondary" type="button" id="exportBtn">Скачать CSV</button></section>
-          <details class="audit-panel" id="auditPanel"><summary><span>История действий</span><span id="auditCount">0</span></summary><div class="audit-list" id="auditList"></div></details>
+          <section class="side-section">
+            <button class="btn secondary" type="button" id="exportBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Скачать CSV
+            </button>
+          </section>
+
+          <details class="audit-panel" id="auditPanel">
+            <summary>
+              <span>История действий</span>
+              <span id="auditCount">0</span>
+            </summary>
+            <div class="audit-list" id="auditList"></div>
+          </details>
         </details>
       </aside>
     </section>
   </main>
 
-  <template id="emptyTemplate"><div class="empty">Добавьте первый рабочий день.</div></template>
+  <template id="emptyTemplate">
+    <div class="empty">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M9 16h6"/></svg>
+      <div>Добавьте первый рабочий день.</div>
+    </div>
+  </template>
 
   <script>
     const STORAGE_KEY = "nanny-time-tracker-v1";
     const RATES_VERSION = 2;
-    const defaultState = { ratesVersion: RATES_VERSION, hourRate: 13, tripRate: 4.86, days: [] };
+    const defaultState = {
+      ratesVersion: RATES_VERSION,
+      hourRate: 13,
+      tripRate: 4.86,
+      days: []
+    };
+
     let state = loadState();
+    let tick = null;
     let editingDayId = null;
     let selectedWeekDate = toDateInputValue(new Date());
     let selectedMonth = toMonthInputValue(new Date());
     let saveTimer = null;
     let serverSyncReady = false;
 
-    const $ = (id) => document.querySelector(id);
     const els = {
-      form: $("#addForm"), workDate: $("#workDate"), workHours: $("#workHours"), workMinutes: $("#workMinutes"), workParking: $("#workParking"), workOvernight: $("#workOvernight"), workNote: $("#workNote"),
-      ratesView: $("#ratesView"), ratesEdit: $("#ratesEdit"), hourRate: $("#hourRate"), tripRate: $("#tripRate"), hourRateValue: $("#hourRateValue"), tripRateValue: $("#tripRateValue"), editRates: $("#editRates"), saveRates: $("#saveRates"), cancelRates: $("#cancelRates"),
-      days: $("#days"), topTotal: $("#topTotal"), recordsPanel: $("#recordsPanel"), recordsCount: $("#recordsCount"), advancedPanel: $("#advancedPanel"), emptyMount: $("#emptyMount"), emptyTemplate: $("#emptyTemplate"),
-      sumDays: $("#sumDays"), sumTrips: $("#sumTrips"), sumHours: $("#sumHours"), sumTripPay: $("#sumTripPay"), sumParking: $("#sumParking"), sumOvernight: $("#sumOvernight"), sumPay: $("#sumPay"), sumFormula: $("#sumFormula"),
-      weekDate: $("#weekDate"), weekPrev: $("#weekPrev"), weekNext: $("#weekNext"), weekLabel: $("#weekLabel"), weekHours: $("#weekHours"), weekTrips: $("#weekTrips"), weekPay: $("#weekPay"),
-      monthDate: $("#monthDate"), monthPrev: $("#monthPrev"), monthNext: $("#monthNext"), monthLabel: $("#monthLabel"), monthHours: $("#monthHours"), monthTrips: $("#monthTrips"), monthPay: $("#monthPay"),
-      auditList: $("#auditList"), auditCount: $("#auditCount"), exportBtn: $("#exportBtn")
+      form: document.querySelector("#addDayForm"),
+      workDate: document.querySelector("#workDate"),
+      workHours: document.querySelector("#workHours"),
+      workMinutes: document.querySelector("#workMinutes"),
+      workParking: document.querySelector("#workParking"),
+      workOvernight: document.querySelector("#workOvernight"),
+      workNote: document.querySelector("#workNote"),
+      ratesView: document.querySelector("#ratesView"),
+      ratesEdit: document.querySelector("#ratesEdit"),
+      hourRate: document.querySelector("#hourRate"),
+      tripRate: document.querySelector("#tripRate"),
+      hourRateValue: document.querySelector("#hourRateValue"),
+      tripRateValue: document.querySelector("#tripRateValue"),
+      editRatesBtn: document.querySelector("#editRatesBtn"),
+      saveRatesBtn: document.querySelector("#saveRatesBtn"),
+      cancelRatesBtn: document.querySelector("#cancelRatesBtn"),
+      days: document.querySelector("#days"),
+      topTotal: document.querySelector("#topTotal"),
+      sumDays: document.querySelector("#sumDays"),
+      sumTrips: document.querySelector("#sumTrips"),
+      sumHours: document.querySelector("#sumHours"),
+      sumTripPay: document.querySelector("#sumTripPay"),
+      sumParking: document.querySelector("#sumParking"),
+      sumOvernight: document.querySelector("#sumOvernight"),
+      sumPay: document.querySelector("#sumPay"),
+      sumFormula: document.querySelector("#sumFormula"),
+      weekHours: document.querySelector("#weekHours"),
+      weekTrips: document.querySelector("#weekTrips"),
+      weekPay: document.querySelector("#weekPay"),
+      weekDate: document.querySelector("#weekDate"),
+      weekPrev: document.querySelector("#weekPrev"),
+      weekNext: document.querySelector("#weekNext"),
+      weekLabel: document.querySelector("#weekLabel"),
+      monthHours: document.querySelector("#monthHours"),
+      monthTrips: document.querySelector("#monthTrips"),
+      monthPay: document.querySelector("#monthPay"),
+      monthDate: document.querySelector("#monthDate"),
+      monthPrev: document.querySelector("#monthPrev"),
+      monthNext: document.querySelector("#monthNext"),
+      monthLabel: document.querySelector("#monthLabel"),
+      recordsPanel: document.querySelector("#recordsPanel"),
+      recordsCount: document.querySelector("#recordsCount"),
+      auditList: document.querySelector("#auditList"),
+      auditCount: document.querySelector("#auditCount"),
+      advancedPanel: document.querySelector("#advancedPanel"),
+      exportBtn: document.querySelector("#exportBtn"),
+      emptyStateMount: document.querySelector("#emptyStateMount"),
+      emptyTemplate: document.querySelector("#emptyTemplate")
     };
 
-    els.workDate.value = toDateInputValue(new Date());
+    els.workDate.value = new Date().toISOString().slice(0, 10);
     els.weekDate.value = selectedWeekDate;
     els.monthDate.value = selectedMonth;
     els.hourRate.value = state.hourRate;
     els.tripRate.value = state.tripRate;
-    if (matchMedia("(max-width: 920px)").matches) { els.advancedPanel.open = false; els.recordsPanel.open = false; }
+    if (window.matchMedia("(max-width: 920px)").matches) {
+      els.advancedPanel.open = false;
+      els.recordsPanel.open = false;
+    }
     loadServerState();
 
     els.form.addEventListener("submit", (event) => {
@@ -283,156 +1195,577 @@
       if (!date) return;
       const hours = Math.max(0, Math.floor(readNumber(els.workHours.value)));
       const minutes = Math.max(0, Math.min(59, Math.floor(readNumber(els.workMinutes.value))));
+      const parking = readNumber(els.workParking.value);
+      const overnight = readOvernight(els.workOvernight.value);
+      const elapsedMs = ((hours * 60) + minutes) * 60000;
+
       state.days.push({
-        id: crypto.randomUUID(), date, note: els.workNote.value.trim(), elapsedMs: ((hours * 60) + minutes) * 60000,
-        startedAt: null, trips: 0, parking: readNumber(els.workParking.value), overnight: readOvernight(els.workOvernight.value)
+        id: crypto.randomUUID(),
+        date,
+        note: els.workNote.value.trim(),
+        elapsedMs,
+        startedAt: null,
+        trips: 0,
+        parking,
+        overnight
       });
+
       state.days.sort((a, b) => b.date.localeCompare(a.date));
-      els.workHours.value = 0; els.workMinutes.value = 0; els.workParking.value = 0; els.workOvernight.value = 0; els.workNote.value = "";
+      els.workHours.value = 0;
+      els.workMinutes.value = 0;
+      els.workParking.value = 0;
+      els.workOvernight.value = 0;
+      els.workNote.value = "";
       persistAndRender();
     });
 
-    els.editRates.addEventListener("click", () => setRatesEditing(true));
-    els.cancelRates.addEventListener("click", () => { els.hourRate.value = state.hourRate; els.tripRate.value = state.tripRate; setRatesEditing(false); });
-    els.saveRates.addEventListener("click", () => { state.hourRate = readNumber(els.hourRate.value); state.tripRate = readNumber(els.tripRate.value); setRatesEditing(false); persistAndRender(); });
-    els.weekDate.addEventListener("change", () => { selectedWeekDate = els.weekDate.value || toDateInputValue(new Date()); render(); });
-    els.weekPrev.addEventListener("click", () => shiftSelectedWeek(-7));
-    els.weekNext.addEventListener("click", () => shiftSelectedWeek(7));
-    els.monthDate.addEventListener("change", () => { selectedMonth = els.monthDate.value || toMonthInputValue(new Date()); render(); });
-    els.monthPrev.addEventListener("click", () => shiftSelectedMonth(-1));
-    els.monthNext.addEventListener("click", () => shiftSelectedMonth(1));
-    els.exportBtn.addEventListener("click", exportCsv);
+    els.editRatesBtn.addEventListener("click", () => {
+      setRatesEditing(true);
+    });
+
+    els.cancelRatesBtn.addEventListener("click", () => {
+      els.hourRate.value = state.hourRate;
+      els.tripRate.value = state.tripRate;
+      setRatesEditing(false);
+    });
+
+    els.saveRatesBtn.addEventListener("click", () => {
+      state.hourRate = readNumber(els.hourRate.value);
+      state.tripRate = readNumber(els.tripRate.value);
+      setRatesEditing(false);
+      persistAndRender();
+    });
+
+    els.weekDate.addEventListener("change", () => {
+      selectedWeekDate = els.weekDate.value || toDateInputValue(new Date());
+      render();
+    });
+
+    els.weekPrev.addEventListener("click", () => {
+      selectedWeekDate = shiftDate(selectedWeekDate, -7);
+      els.weekDate.value = selectedWeekDate;
+      render();
+    });
+
+    els.weekNext.addEventListener("click", () => {
+      selectedWeekDate = shiftDate(selectedWeekDate, 7);
+      els.weekDate.value = selectedWeekDate;
+      render();
+    });
+
+    els.monthDate.addEventListener("change", () => {
+      selectedMonth = els.monthDate.value || toMonthInputValue(new Date());
+      render();
+    });
+
+    els.monthPrev.addEventListener("click", () => {
+      selectedMonth = shiftMonth(selectedMonth, -1);
+      els.monthDate.value = selectedMonth;
+      render();
+    });
+
+    els.monthNext.addEventListener("click", () => {
+      selectedMonth = shiftMonth(selectedMonth, 1);
+      els.monthDate.value = selectedMonth;
+      render();
+    });
 
     els.days.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;
+
       const day = state.days.find((item) => item.id === button.dataset.id);
       if (!day) return;
-      if (button.dataset.action === "edit") editingDayId = day.id;
-      if (button.dataset.action === "cancel") editingDayId = null;
-      if (button.dataset.action === "save") saveEditedDay(day, button.closest(".day-card"));
-      if (button.dataset.action === "remove" && confirm("Удалить эту запись?")) {
+
+      const action = button.dataset.action;
+      if (action === "edit") editingDayId = day.id;
+      if (action === "cancel-edit") editingDayId = null;
+      if (action === "save-edit") saveEditedDay(day, button.closest(".day-card"));
+      if (action === "remove" && confirm("Удалить этот день?")) {
         state.days = state.days.filter((item) => item.id !== day.id);
         if (editingDayId === day.id) editingDayId = null;
       }
+
       persistAndRender();
     });
+
+    els.exportBtn.addEventListener("click", exportCsv);
 
     function loadState() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        const next = { ...defaultState, ...saved, days: Array.isArray(saved?.days) ? saved.days : [] };
-        if (next.ratesVersion !== RATES_VERSION) { next.hourRate = defaultState.hourRate; next.tripRate = defaultState.tripRate; next.ratesVersion = RATES_VERSION; }
-        return normalizeClientState(next);
-      } catch { return structuredClone(defaultState); }
+        const nextState = { ...defaultState, ...saved, days: Array.isArray(saved?.days) ? saved.days : [] };
+        if (nextState.ratesVersion !== RATES_VERSION) {
+          nextState.hourRate = defaultState.hourRate;
+          nextState.tripRate = defaultState.tripRate;
+          nextState.ratesVersion = RATES_VERSION;
+        }
+        return nextState;
+      } catch {
+        return structuredClone(defaultState);
+      }
     }
-    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); if (serverSyncReady) scheduleServerSave(); }
-    function persistAndRender() { persist(); render(); }
-    function setRatesEditing(isEditing) { els.ratesView.hidden = isEditing; els.ratesEdit.hidden = !isEditing; els.editRates.hidden = isEditing; els.saveRates.hidden = !isEditing; els.cancelRates.hidden = !isEditing; if (isEditing) { els.hourRate.value = state.hourRate; els.tripRate.value = state.tripRate; } }
+
+    function persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (serverSyncReady) scheduleServerSave();
+    }
+
+    function persistAndRender() {
+      persist();
+      render();
+    }
+
+    function setRatesEditing(isEditing) {
+      els.ratesView.hidden = isEditing;
+      els.ratesEdit.hidden = !isEditing;
+      els.editRatesBtn.hidden = isEditing;
+      els.saveRatesBtn.hidden = !isEditing;
+      els.cancelRatesBtn.hidden = !isEditing;
+      if (isEditing) {
+        els.hourRate.value = state.hourRate;
+        els.tripRate.value = state.tripRate;
+      }
+    }
+
     async function loadServerState() {
       try {
         const response = await fetch("/api/state", { credentials: "same-origin" });
-        if (!response.ok) { render(); return; }
+        if (!response.ok) {
+          render();
+          return;
+        }
+
         const payload = await response.json();
-        if (payload.state?.days?.length || payload.state?.hourRate || payload.state?.tripRate) {
-          state = normalizeClientState(payload.state);
+        const serverState = payload.state;
+        if (serverState?.days?.length || serverState?.hourRate || serverState?.tripRate) {
+          state = normalizeClientState(serverState);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } else if (state.days.length) await saveServerStateNow();
-      } catch {}
-      finally { serverSyncReady = true; els.hourRate.value = state.hourRate; els.tripRate.value = state.tripRate; render(); loadAuditLog(); }
+        } else if (state.days.length) {
+          await saveServerStateNow();
+        }
+      } catch {
+        // Local file mode or offline use keeps browser storage working.
+      } finally {
+        serverSyncReady = true;
+        els.hourRate.value = state.hourRate;
+        els.tripRate.value = state.tripRate;
+        render();
+        loadAuditLog();
+      }
     }
-    function scheduleServerSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveServerStateNow, 250); }
+
+    function scheduleServerSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveServerStateNow, 250);
+    }
+
     async function saveServerStateNow() {
       try {
-        const response = await fetch("/api/state", { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ state }) });
+        const response = await fetch("/api/state", {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+        });
         if (response.ok) loadAuditLog();
-      } catch {}
+      } catch {
+        // Keep local changes; the next successful edit will retry.
+      }
     }
+
     async function loadAuditLog() {
       try {
         const response = await fetch("/api/audit-log", { credentials: "same-origin" });
         if (!response.ok) return;
         const payload = await response.json();
         renderAuditLog(payload.events || []);
-      } catch {}
+      } catch {
+        // Audit log is server-only; local file mode can ignore it.
+      }
     }
+
     function renderAuditLog(events) {
       els.auditCount.textContent = events.length;
       els.auditList.replaceChildren();
-      if (!events.length) { els.auditList.innerHTML = '<div class="audit-item"><strong>Пока пусто</strong><span>Действия появятся после изменений.</span></div>'; return; }
+
+      if (!events.length) {
+        const empty = document.createElement("div");
+        empty.className = "audit-item";
+        empty.innerHTML = "<strong>Пока пусто</strong><span>Действия появятся после изменений.</span>";
+        els.auditList.append(empty);
+        return;
+      }
+
       events.forEach((event) => {
         const item = document.createElement("div");
         item.className = "audit-item";
-        item.innerHTML = `<strong>${escapeHtml(event.details)}</strong><span>${escapeHtml(event.userEmail)} · ${escapeHtml(formatDateTime(event.createdAt))}</span>`;
+        item.innerHTML = `
+          <strong>${escapeHtml(event.details)}</strong>
+          <span>${escapeHtml(event.userEmail)} · ${escapeHtml(formatDateTime(event.createdAt))}</span>
+        `;
         els.auditList.append(item);
       });
     }
-    function normalizeClientState(value) { return { ...defaultState, ...value, days: Array.isArray(value?.days) ? value.days.map((day) => ({ ...day, trips: Math.max(0, Math.floor(readNumber(day.trips))), parking: readNumber(day.parking), overnight: readOvernight(day.overnight), elapsedMs: Math.max(0, readNumber(day.elapsedMs)) })) : [] }; }
+
+    function normalizeClientState(value) {
+      return {
+        ...defaultState,
+        ...value,
+        days: Array.isArray(value?.days) ? value.days.map((day) => ({ ...day, parking: readNumber(day.parking), overnight: readOvernight(day.overnight) })) : []
+      };
+    }
+
     function render() {
-      els.days.replaceChildren(); els.emptyMount.replaceChildren();
-      if (!state.days.length) els.emptyMount.append(els.emptyTemplate.content.cloneNode(true));
-      else state.days.forEach((day) => els.days.append(renderDay(day)));
+      els.days.replaceChildren();
+      els.emptyStateMount.replaceChildren();
+
+      if (!state.days.length) {
+        els.emptyStateMount.append(els.emptyTemplate.content.cloneNode(true));
+      } else {
+        state.days.forEach((day) => els.days.append(renderDay(day)));
+      }
+
       const totals = calculateTotals(state.days);
       const weekRange = getWeekRange(selectedWeekDate);
       const monthRange = getMonthRange(selectedMonth);
       const weekTotals = calculateTotals(state.days.filter((day) => isInRange(day, weekRange.start, weekRange.end)));
       const monthTotals = calculateTotals(state.days.filter((day) => isInRange(day, monthRange.start, monthRange.end)));
-      els.topTotal.textContent = money(totals.pay); els.hourRateValue.textContent = money(state.hourRate); els.tripRateValue.textContent = money(state.tripRate);
-      els.sumDays.textContent = new Set(state.days.map((day) => day.date)).size; els.recordsCount.textContent = state.days.length; els.sumTrips.textContent = totals.trips; els.sumHours.textContent = formatDuration(totals.ms);
-      els.sumTripPay.textContent = money(totals.trips * state.tripRate); els.sumParking.textContent = money(totals.parking); els.sumOvernight.textContent = money(totals.overnight); els.sumPay.textContent = money(totals.pay);
-      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч x ${money(state.hourRate)} + ${totals.trips} поездок x ${money(state.tripRate)} + паркинг ${money(totals.parking)} + ночевки ${money(totals.overnight)} = <strong>${money(totals.pay)}</strong>`;
-      els.weekLabel.textContent = `${formatShortDate(weekRange.start)} - ${formatShortDate(addDays(weekRange.end, -1))}`; els.weekHours.textContent = formatDuration(weekTotals.ms); els.weekTrips.textContent = weekTotals.trips; els.weekPay.textContent = money(weekTotals.pay);
-      els.monthLabel.textContent = formatMonthLabel(monthRange.start); els.monthHours.textContent = formatDuration(monthTotals.ms); els.monthTrips.textContent = monthTotals.trips; els.monthPay.textContent = money(monthTotals.pay);
+
+      els.topTotal.textContent = money(totals.pay);
+      els.hourRateValue.textContent = money(state.hourRate);
+      els.tripRateValue.textContent = money(state.tripRate);
+      els.sumDays.textContent = countUniqueDates(state.days);
+      els.recordsCount.textContent = state.days.length;
+      els.sumTrips.textContent = totals.trips;
+      els.sumHours.textContent = formatDuration(totals.ms);
+      els.sumTripPay.textContent = money(totals.trips * state.tripRate);
+      els.sumParking.textContent = money(totals.parking);
+      els.sumOvernight.textContent = money(totals.overnight);
+      els.sumPay.textContent = money(totals.pay);
+      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч × ${money(state.hourRate)} + ${totals.trips} поездок × ${money(state.tripRate)} + паркинг ${money(totals.parking)} + ночевки ${money(totals.overnight)} = <strong>${money(totals.pay)}</strong>`;
+      els.weekLabel.textContent = `${formatShortDate(weekRange.start)} - ${formatShortDate(addDays(weekRange.end, -1))}`;
+      els.weekHours.textContent = formatDuration(weekTotals.ms);
+      els.weekTrips.textContent = weekTotals.trips;
+      els.weekPay.textContent = money(weekTotals.pay);
+      els.monthLabel.textContent = formatMonthLabel(monthRange.start);
+      els.monthHours.textContent = formatDuration(monthTotals.ms);
+      els.monthTrips.textContent = monthTotals.trips;
+      els.monthPay.textContent = money(monthTotals.pay);
+
+      if (tick) {
+        clearInterval(tick);
+        tick = null;
+      }
     }
+
     function renderDay(day) {
       const card = document.createElement("article");
-      card.className = editingDayId === day.id ? "day-card editing" : "day-card";
-      if (editingDayId === day.id) { card.innerHTML = renderEditDay(day); return card; }
-      card.innerHTML = `<div><strong>${escapeHtml(formatDate(day.date))}</strong><span>${escapeHtml(day.note || "Без заметки")}</span></div><div><span>Время</span><strong>${formatDuration(day.elapsedMs)}</strong></div><div><span>Поездки</span><strong>${day.trips}</strong></div><div><span>Паркинг</span><strong>${money(day.parking || 0)}</strong></div><div><span>Ночевка</span><strong>${money(day.overnight || 0)}</strong></div><div><span>К оплате</span><strong>${money(payFor(day))}</strong><span>${formatDecimalHours(day.elapsedMs)} ч x ${money(state.hourRate)} + ${day.trips} x ${money(state.tripRate)} + ${money(day.parking || 0)} + ${money(day.overnight || 0)}</span></div><div class="day-actions"><button class="icon-btn" type="button" data-action="edit" data-id="${day.id}" title="Редактировать"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" type="button" data-action="remove" data-id="${day.id}" title="Удалить"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button></div>`;
+      const isEditing = editingDayId === day.id;
+      card.className = isEditing ? "day-card editing" : "day-card";
+      card.dataset.id = day.id;
+      if (isEditing) {
+        card.innerHTML = renderEditDay(day);
+        return card;
+      }
+
+      card.innerHTML = `
+        <div class="day-date">
+          <strong>${escapeHtml(formatDate(day.date))}</strong>
+          <span>${escapeHtml(day.note || "Без заметки")}</span>
+        </div>
+        <div class="metric">
+          <span>Время</span>
+          <strong class="time-value">${formatDuration(currentElapsed(day))}</strong>
+        </div>
+        <div class="metric">
+          <span>Поездки</span>
+          <strong class="time-value">${day.trips}</strong>
+        </div>
+        <div class="metric">
+          <span>Паркинг</span>
+          <strong class="time-value">${money(day.parking || 0)}</strong>
+        </div>
+        <div class="metric">
+          <span>Ночевка</span>
+          <strong class="time-value">${money(day.overnight || 0)}</strong>
+        </div>
+        <div class="metric">
+          <span>К оплате</span>
+          <strong class="money-value">${money(payFor(day))}</strong>
+          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(state.hourRate)} + ${day.trips} × ${money(state.tripRate)} + ${money(day.parking || 0)} + ${money(day.overnight || 0)}</span>
+        </div>
+        <div class="day-actions">
+          <button class="icon-btn" type="button" data-action="edit" data-id="${day.id}" title="Редактировать день" aria-label="Редактировать день">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn" type="button" data-action="remove" data-id="${day.id}" title="Удалить день" aria-label="Удалить день">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+      `;
       return card;
     }
+
     function renderEditDay(day) {
-      const totalMinutes = Math.floor(day.elapsedMs / 60000);
-      return `<div class="edit-grid"><label>Дата<input type="date" data-edit="date" value="${day.date}" required></label><label>Заметка<input type="text" data-edit="note" value="${escapeHtml(day.note || "")}"></label><label>Часы<input type="number" data-edit="hours" min="0" step="1" value="${Math.floor(totalMinutes / 60)}"></label><label>Минуты<input type="number" data-edit="minutes" min="0" max="59" step="1" value="${totalMinutes % 60}"></label><label>Поездки<input type="number" data-edit="trips" min="0" step="1" value="${day.trips}"></label><label>Паркинг €<input type="number" data-edit="parking" min="0" step="0.01" value="${day.parking || 0}"></label><label>Ночевка<select data-edit="overnight"><option value="0"${readOvernight(day.overnight) === 0 ? " selected" : ""}>0 €</option><option value="100"${readOvernight(day.overnight) === 100 ? " selected" : ""}>100 €</option></select></label></div><div class="edit-actions"><button class="btn secondary" type="button" data-action="cancel" data-id="${day.id}">Отмена</button><button class="btn" type="button" data-action="save" data-id="${day.id}">Сохранить</button></div>`;
+      const minutes = Math.floor(currentElapsed(day) / 60000);
+      const hours = Math.floor(minutes / 60);
+      const restMinutes = minutes % 60;
+
+      return `
+        <div class="edit-grid">
+          <label>
+            Дата
+            <input type="date" data-edit="date" value="${day.date}" required>
+          </label>
+          <label>
+            Заметка
+            <input type="text" data-edit="note" value="${escapeHtml(day.note || "")}" placeholder="Заметка">
+          </label>
+          <label>
+            Часы
+            <input type="number" data-edit="hours" min="0" step="1" inputmode="numeric" value="${hours}">
+          </label>
+          <label>
+            Минуты
+            <input type="number" data-edit="minutes" min="0" max="59" step="1" inputmode="numeric" value="${restMinutes}">
+          </label>
+          <label>
+            Поездки
+            <input type="number" data-edit="trips" min="0" step="1" inputmode="numeric" value="${day.trips}">
+          </label>
+          <label>
+            Паркинг €
+            <input type="number" data-edit="parking" min="0" step="0.01" inputmode="decimal" value="${day.parking || 0}">
+          </label>
+          <label>
+            Ночевка
+            <select data-edit="overnight">
+              <option value="0"${readOvernight(day.overnight) === 0 ? " selected" : ""}>0 €</option>
+              <option value="100"${readOvernight(day.overnight) === 100 ? " selected" : ""}>100 €</option>
+            </select>
+          </label>
+        </div>
+        <div class="edit-actions">
+          <button class="btn secondary" type="button" data-action="cancel-edit" data-id="${day.id}">Отмена</button>
+          <button class="btn" type="button" data-action="save-edit" data-id="${day.id}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Сохранить
+          </button>
+        </div>
+      `;
     }
+
     function saveEditedDay(day, card) {
-      const get = (name) => card.querySelector(`[data-edit="${name}"]`);
-      if (!get("date").value) return;
-      day.date = get("date").value; day.note = get("note").value.trim();
-      day.elapsedMs = ((Math.max(0, Math.floor(readNumber(get("hours").value))) * 60) + Math.max(0, Math.min(59, Math.floor(readNumber(get("minutes").value))))) * 60000;
-      day.trips = Math.max(0, Math.floor(readNumber(get("trips").value))); day.parking = readNumber(get("parking").value); day.overnight = readOvernight(get("overnight").value);
-      editingDayId = null; state.days.sort((a, b) => b.date.localeCompare(a.date));
+      if (!card) return;
+      const date = card.querySelector('[data-edit="date"]').value;
+      if (!date) return;
+
+      if (day.startedAt) {
+        day.elapsedMs = currentElapsed(day);
+        day.startedAt = null;
+      }
+
+      const hours = Math.max(0, Math.floor(readNumber(card.querySelector('[data-edit="hours"]').value)));
+      const minutes = Math.max(0, Math.min(59, Math.floor(readNumber(card.querySelector('[data-edit="minutes"]').value))));
+      const trips = Math.max(0, Math.floor(readNumber(card.querySelector('[data-edit="trips"]').value)));
+      const parking = readNumber(card.querySelector('[data-edit="parking"]').value);
+      const overnight = readOvernight(card.querySelector('[data-edit="overnight"]').value);
+
+      day.date = date;
+      day.note = card.querySelector('[data-edit="note"]').value.trim();
+      day.elapsedMs = ((hours * 60) + minutes) * 60000;
+      day.trips = trips;
+      day.parking = parking;
+      day.overnight = overnight;
+      editingDayId = null;
+      state.days.sort((a, b) => b.date.localeCompare(a.date));
     }
-    function calculateTotals(days) { return days.reduce((acc, day) => { acc.ms += day.elapsedMs; acc.trips += day.trips; acc.parking += day.parking || 0; acc.overnight += day.overnight || 0; acc.pay += payFor(day); return acc; }, { ms: 0, trips: 0, parking: 0, overnight: 0, pay: 0 }); }
-    function payFor(day) { return (day.elapsedMs / 3600000 * state.hourRate) + (day.trips * state.tripRate) + (day.parking || 0) + (day.overnight || 0); }
-    function isInRange(day, start, end) { const date = dateFromInput(day.date); return date >= start && date < end; }
-    function getWeekRange(value) { const start = startOfWeek(dateFromInput(value)); return { start, end: addDays(start, 7) }; }
-    function getMonthRange(value) { const [year, month] = value.split("-").map(Number); return { start: new Date(year, month - 1, 1), end: new Date(year, month, 1) }; }
-    function startOfWeek(date) { const start = startOfDay(date); const day = start.getDay() || 7; start.setDate(start.getDate() - day + 1); return start; }
-    function startOfDay(date) { const next = new Date(date); next.setHours(0, 0, 0, 0); return next; }
-    function addDays(date, count) { const next = new Date(date); next.setDate(next.getDate() + count); return next; }
-    function shiftSelectedWeek(days) { selectedWeekDate = toDateInputValue(addDays(dateFromInput(selectedWeekDate), days)); els.weekDate.value = selectedWeekDate; render(); }
-    function shiftSelectedMonth(months) { const [year, month] = selectedMonth.split("-").map(Number); selectedMonth = toMonthInputValue(new Date(year, month - 1 + months, 1)); els.monthDate.value = selectedMonth; render(); }
-    function dateFromInput(value) { return new Date(`${value}T00:00:00`); }
-    function toDateInputValue(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
-    function toMonthInputValue(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; }
-    function formatDuration(ms) { const minutes = Math.floor(ms / 60000); return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`; }
-    function formatDecimalHours(ms) { return new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ms / 3600000); }
-    function formatDate(value) { return new Intl.DateTimeFormat("ru-RU", { weekday: "short", day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`)); }
-    function formatShortDate(date) { return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", year: "numeric" }).format(date); }
-    function formatMonthLabel(date) { return new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(date); }
-    function formatDateTime(value) { return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
-    function money(value) { return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(value); }
-    function readNumber(value) { const parsed = Number(value); return Number.isFinite(parsed) && parsed > 0 ? parsed : 0; }
-    function readOvernight(value) { return Number(value) === 100 ? 100 : 0; }
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]); }
+
+    function currentElapsed(day) {
+      return day.elapsedMs + (day.startedAt ? Date.now() - day.startedAt : 0);
+    }
+
+    function calculateTotals(days) {
+      return days.reduce((acc, day) => {
+        const ms = currentElapsed(day);
+        acc.ms += ms;
+        acc.trips += day.trips;
+        acc.parking += day.parking || 0;
+        acc.overnight += day.overnight || 0;
+        acc.pay += payFor(day);
+        return acc;
+      }, { ms: 0, trips: 0, parking: 0, overnight: 0, pay: 0 });
+    }
+
+    function countUniqueDates(days) {
+      return new Set(days.map((day) => day.date)).size;
+    }
+
+    function payFor(day) {
+      return (currentElapsed(day) / 3600000 * state.hourRate) + (day.trips * state.tripRate) + (day.parking || 0) + (day.overnight || 0);
+    }
+
+    function isInRange(day, start, end) {
+      const date = dateFromInput(day.date);
+      return date >= start && date < end;
+    }
+
+    function getWeekRange(value) {
+      const start = startOfWeek(dateFromInput(value));
+      return { start, end: addDays(start, 7) };
+    }
+
+    function getMonthRange(value) {
+      const [year, month] = value.split("-").map(Number);
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 1);
+      return { start, end };
+    }
+
+    function startOfWeek(date) {
+      const start = startOfDay(date);
+      const day = start.getDay() || 7;
+      start.setDate(start.getDate() - day + 1);
+      return start;
+    }
+
+    function addDays(date, count) {
+      const next = new Date(date);
+      next.setDate(next.getDate() + count);
+      return next;
+    }
+
+    function startOfDay(date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+
+    function dateFromInput(value) {
+      return new Date(`${value}T00:00:00`);
+    }
+
+    function shiftDate(value, days) {
+      return toDateInputValue(addDays(dateFromInput(value), days));
+    }
+
+    function shiftMonth(value, months) {
+      const [year, month] = value.split("-").map(Number);
+      return toMonthInputValue(new Date(year, month - 1 + months, 1));
+    }
+
+    function toDateInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function toMonthInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
+    }
+
+    function formatDuration(ms) {
+      const totalMinutes = Math.floor(ms / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = String(totalMinutes % 60).padStart(2, "0");
+      return `${hours}:${minutes}`;
+    }
+
+    function formatDecimalHours(ms) {
+      const hours = ms / 3600000;
+      return new Intl.NumberFormat("ru-RU", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(hours);
+    }
+
+    function formatDate(value) {
+      return new Intl.DateTimeFormat("ru-RU", {
+        weekday: "short",
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      }).format(new Date(`${value}T12:00:00`));
+    }
+
+    function formatShortDate(date) {
+      return new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function formatMonthLabel(date) {
+      return new Intl.DateTimeFormat("ru-RU", {
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function formatDateTime(value) {
+      return new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function money(value) {
+      return new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 2
+      }).format(value);
+    }
+
+    function readNumber(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+
+    function readOvernight(value) {
+      return Number(value) === 100 ? 100 : 0;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[char]);
+    }
+
     function exportCsv() {
       const header = ["Дата", "Заметка", "Время", "Поездки", "Паркинг", "Ночевка", "Сумма"];
-      const rows = state.days.map((day) => [day.date, day.note || "", formatDuration(day.elapsedMs), day.trips, (day.parking || 0).toFixed(2), (day.overnight || 0).toFixed(2), payFor(day).toFixed(2)]);
-      const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+      const rows = state.days.map((day) => [
+        day.date,
+        day.note || "",
+        formatDuration(currentElapsed(day)),
+        day.trips,
+        (day.parking || 0).toFixed(2),
+        (day.overnight || 0).toFixed(2),
+        payFor(day).toFixed(2)
+      ]);
+      const csv = [header, ...rows]
+        .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+        .join("\n");
       const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `nanny-time-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `nanny-time-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
     }
+
     render();
   </script>
 </body>
