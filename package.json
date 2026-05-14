@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "check": "node --check server.js && node scripts/verify-release.js",
     "start": "node server.js"
   },
   "dependencies": {
