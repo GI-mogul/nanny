@@ -18,7 +18,7 @@ const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, ".audi
 const DATABASE_URL = process.env.DATABASE_URL;
 const ALLOWED_EMAILS = new Set(
   (process.env.ALLOWED_EMAILS || "")
-    .split(",")
+    .split(/[\s,;]+/)
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
 );
@@ -273,7 +273,7 @@ function formatDayForLog(day) {
   const minutes = Math.floor(day.elapsedMs / 60000);
   const hours = Math.floor(minutes / 60);
   const restMinutes = String(minutes % 60).padStart(2, "0");
-  return `${day.date}, ${hours}:${restMinutes}, поездки ${day.trips}, паркинг ${day.parking} €`;
+  return `${day.date}, ${hours}:${restMinutes}, поездки ${day.trips}, паркинг ${day.parking} €, ночевка ${day.overnight} €`;
 }
 
 function normalizeState(value) {
@@ -295,13 +295,18 @@ function normalizeDay(day) {
     elapsedMs: Math.max(0, Math.floor(readPositiveNumber(day.elapsedMs, 0))),
     startedAt: null,
     trips: Math.max(0, Math.floor(readPositiveNumber(day.trips, 0))),
-    parking: readPositiveNumber(day.parking, 0)
+    parking: readPositiveNumber(day.parking, 0),
+    overnight: readOvernight(day.overnight)
   };
 }
 
 function readPositiveNumber(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function readOvernight(value) {
+  return Number(value) === 100 ? 100 : 0;
 }
 
 function readJsonBody(req) {
