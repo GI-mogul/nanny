@@ -1122,6 +1122,8 @@
       ratesVersion: RATES_VERSION,
       hourRate: 13,
       tripRate: 4.86,
+      ratesUpdatedAt: null,
+      deletedDays: {},
       days: []
     };
 
@@ -1213,7 +1215,8 @@
         startedAt: null,
         trips: 0,
         parking,
-        overnight
+        overnight,
+        updatedAt: nowIso()
       });
 
       state.days.sort((a, b) => b.date.localeCompare(a.date));
@@ -1238,6 +1241,7 @@
     els.saveRatesBtn.addEventListener("click", () => {
       state.hourRate = readNumber(els.hourRate.value);
       state.tripRate = readNumber(els.tripRate.value);
+      state.ratesUpdatedAt = nowIso();
       setRatesEditing(false);
       persistAndRender();
     });
@@ -1288,6 +1292,7 @@
       if (action === "cancel-edit") editingDayId = null;
       if (action === "save-edit") saveEditedDay(day, button.closest(".day-card"));
       if (action === "remove" && confirm("Удалить этот день?")) {
+        state.deletedDays = { ...(state.deletedDays || {}), [day.id]: nowIso() };
         state.days = state.days.filter((item) => item.id !== day.id);
         if (editingDayId === day.id) editingDayId = null;
       }
@@ -1345,8 +1350,12 @@
         const payload = await response.json();
         const serverState = payload.state;
         if (serverState?.days?.length || serverState?.hourRate || serverState?.tripRate) {
-          state = normalizeClientState(serverState);
+          const normalizedServerState = normalizeClientState(serverState);
+          state = mergeClientStates(normalizedServerState, state);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          if (JSON.stringify(state) !== JSON.stringify(normalizedServerState)) {
+            await saveServerStateNow();
+          }
         } else if (state.days.length) {
           await saveServerStateNow();
         }
@@ -1415,11 +1424,57 @@
     }
 
     function normalizeClientState(value) {
+      const deletedDays = value?.deletedDays && typeof value.deletedDays === "object" ? value.deletedDays : {};
       return {
         ...defaultState,
         ...value,
-        days: Array.isArray(value?.days) ? value.days.map((day) => ({ ...day, parking: readNumber(day.parking), overnight: readOvernight(day.overnight) })) : []
+        deletedDays,
+        days: Array.isArray(value?.days) ? value.days.map((day) => ({
+          ...day,
+          parking: readNumber(day.parking),
+          overnight: readOvernight(day.overnight),
+          updatedAt: day.updatedAt || null
+        })) : []
       };
+    }
+
+    function mergeClientStates(serverValue, localValue) {
+      const serverState = normalizeClientState(serverValue);
+      const localState = normalizeClientState(localValue);
+      const merged = {
+        ...serverState,
+        deletedDays: { ...serverState.deletedDays }
+      };
+
+      if (localState.ratesUpdatedAt && timestampMs(localState.ratesUpdatedAt) >= timestampMs(serverState.ratesUpdatedAt)) {
+        merged.hourRate = localState.hourRate;
+        merged.tripRate = localState.tripRate;
+        merged.ratesUpdatedAt = localState.ratesUpdatedAt;
+      }
+
+      for (const [id, deletedAt] of Object.entries(localState.deletedDays || {})) {
+        if (timestampMs(deletedAt) >= timestampMs(merged.deletedDays[id])) {
+          merged.deletedDays[id] = deletedAt;
+        }
+      }
+
+      const daysById = new Map(serverState.days.map((day) => [day.id, day]));
+      for (const day of localState.days) {
+        const current = daysById.get(day.id);
+        if (!current || timestampMs(day.updatedAt) >= timestampMs(current.updatedAt)) {
+          daysById.set(day.id, day);
+        }
+      }
+
+      for (const [id, deletedAt] of Object.entries(merged.deletedDays)) {
+        const day = daysById.get(id);
+        if (day && timestampMs(deletedAt) >= timestampMs(day.updatedAt)) {
+          daysById.delete(id);
+        }
+      }
+
+      merged.days = [...daysById.values()].sort((a, b) => b.date.localeCompare(a.date));
+      return merged;
     }
 
     function render() {
@@ -1584,8 +1639,19 @@
       day.trips = trips;
       day.parking = parking;
       day.overnight = overnight;
+      day.updatedAt = nowIso();
       editingDayId = null;
       state.days.sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function timestampMs(value) {
+      if (!value) return 0;
+      const ms = Date.parse(value);
+      return Number.isFinite(ms) ? ms : 0;
     }
 
     function currentElapsed(day) {

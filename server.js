@@ -180,7 +180,8 @@ async function getSharedState() {
 
 async function saveSharedState(value) {
   await dataStoreReady;
-  const normalized = normalizeState(value);
+  const previous = await getSharedState();
+  const normalized = mergeStates(previous, value);
   if (dbPool) {
     await dbPool.query(`
       insert into app_state (key, value, updated_at)
@@ -281,8 +282,51 @@ function normalizeState(value) {
     ratesVersion: Number(state.ratesVersion || 2),
     hourRate: readPositiveNumber(state.hourRate, 13),
     tripRate: readPositiveNumber(state.tripRate, 4.86),
+    ratesUpdatedAt: normalizeTimestamp(state.ratesUpdatedAt),
+    deletedDays: normalizeDeletedDays(state.deletedDays),
     days: Array.isArray(state.days) ? state.days.map(normalizeDay).filter(Boolean) : []
   };
+}
+
+function mergeStates(previousValue, nextValue) {
+  const hasPrevious = previousValue && typeof previousValue === "object";
+  const previous = normalizeState(previousValue);
+  const next = normalizeState(nextValue);
+  const merged = {
+    ...previous,
+    ratesVersion: next.ratesVersion || previous.ratesVersion,
+    deletedDays: { ...previous.deletedDays }
+  };
+
+  if (!hasPrevious || (next.ratesUpdatedAt && timestampMs(next.ratesUpdatedAt) >= timestampMs(previous.ratesUpdatedAt))) {
+    merged.hourRate = next.hourRate;
+    merged.tripRate = next.tripRate;
+    merged.ratesUpdatedAt = next.ratesUpdatedAt;
+  }
+
+  for (const [id, deletedAt] of Object.entries(next.deletedDays)) {
+    if (timestampMs(deletedAt) >= timestampMs(merged.deletedDays[id])) {
+      merged.deletedDays[id] = deletedAt;
+    }
+  }
+
+  const daysById = new Map(previous.days.map((day) => [day.id, day]));
+  for (const day of next.days) {
+    const current = daysById.get(day.id);
+    if (!current || timestampMs(day.updatedAt) >= timestampMs(current.updatedAt)) {
+      daysById.set(day.id, day);
+    }
+  }
+
+  for (const [id, deletedAt] of Object.entries(merged.deletedDays)) {
+    const day = daysById.get(id);
+    if (day && timestampMs(deletedAt) >= timestampMs(day.updatedAt)) {
+      daysById.delete(id);
+    }
+  }
+
+  merged.days = [...daysById.values()].sort((a, b) => b.date.localeCompare(a.date));
+  return merged;
 }
 
 function normalizeDay(day) {
@@ -295,8 +339,31 @@ function normalizeDay(day) {
     startedAt: null,
     trips: Math.max(0, Math.floor(readPositiveNumber(day.trips, 0))),
     parking: readPositiveNumber(day.parking, 0),
-    overnight: readOvernight(day.overnight)
+    overnight: readOvernight(day.overnight),
+    updatedAt: normalizeTimestamp(day.updatedAt)
   };
+}
+
+function normalizeDeletedDays(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([id, deletedAt]) => [String(id), normalizeTimestamp(deletedAt)])
+      .filter(([, deletedAt]) => deletedAt)
+  );
+}
+
+function normalizeTimestamp(value) {
+  const timestamp = typeof value === "string" ? value : null;
+  if (!timestamp) return null;
+  const ms = Date.parse(timestamp);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
+
+function timestampMs(value) {
+  if (!value) return 0;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : 0;
 }
 
 function readPositiveNumber(value, fallback) {
