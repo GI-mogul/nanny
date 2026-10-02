@@ -263,7 +263,7 @@ function describeStateChanges(previousState, nextState) {
   }
 
   if (previous.hourRate !== next.hourRate || previous.tripRate !== next.tripRate) {
-    events.push(["edit_rates", `Изменены ставки: час ${next.hourRate} €, поездка ${next.tripRate} €`]);
+    events.push(["edit_rates", `Изменены ставки: час с 01.10.2026 ${next.hourRate} €, до 01.10.2026 ${next.historicalHourRate} €, поездка ${next.tripRate} €`]);
   }
 
   return events;
@@ -281,6 +281,7 @@ function normalizeState(value) {
   return {
     ratesVersion: Number(state.ratesVersion || 2),
     hourRate: readPositiveNumber(state.hourRate, 13),
+    historicalHourRate: readPositiveNumber(state.historicalHourRate ?? state.hourRate, 13),
     tripRate: readPositiveNumber(state.tripRate, 4.86),
     ratesUpdatedAt: normalizeTimestamp(state.ratesUpdatedAt),
     deletedDays: normalizeDeletedDays(state.deletedDays),
@@ -300,6 +301,7 @@ function mergeStates(previousValue, nextValue) {
 
   if (!hasPrevious || (next.ratesUpdatedAt && timestampMs(next.ratesUpdatedAt) >= timestampMs(previous.ratesUpdatedAt))) {
     merged.hourRate = next.hourRate;
+    merged.historicalHourRate = hasPrevious ? previous.historicalHourRate : next.historicalHourRate;
     merged.tripRate = next.tripRate;
     merged.ratesUpdatedAt = next.ratesUpdatedAt;
   }
