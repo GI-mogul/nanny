@@ -164,7 +164,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(128px, 1fr) minmax(70px, .5fr) minmax(70px, .5fr) minmax(86px, .65fr) minmax(96px, .7fr) minmax(140px, 1fr) auto;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       align-items: end;
       padding: 14px;
@@ -925,6 +925,10 @@
             <input type="number" id="workParking" min="0" step="0.01" inputmode="decimal" value="0">
           </label>
           <label>
+            Поездки
+            <input type="number" id="workTrips" min="0" step="1" inputmode="numeric" value="0">
+          </label>
+          <label>
             Ночевка
             <select id="workOvernight">
               <option value="0" selected>0 €</option>
@@ -1142,6 +1146,7 @@
       workHours: document.querySelector("#workHours"),
       workMinutes: document.querySelector("#workMinutes"),
       workParking: document.querySelector("#workParking"),
+      workTrips: document.querySelector("#workTrips"),
       workOvernight: document.querySelector("#workOvernight"),
       workNote: document.querySelector("#workNote"),
       ratesView: document.querySelector("#ratesView"),
@@ -1215,7 +1220,7 @@
         note: els.workNote.value.trim(),
         elapsedMs,
         startedAt: null,
-        trips: 0,
+        trips: Math.max(0, Math.floor(readNumber(els.workTrips.value))),
         parking,
         overnight,
         updatedAt: nowIso()
@@ -1225,6 +1230,7 @@
       els.workHours.value = 0;
       els.workMinutes.value = 0;
       els.workParking.value = 0;
+      els.workTrips.value = 0;
       els.workOvernight.value = 0;
       els.workNote.value = "";
       persistAndRender();
