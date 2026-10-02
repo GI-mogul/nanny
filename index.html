@@ -992,7 +992,7 @@
             <h2>Ставки</h2>
             <div class="rates" id="ratesView">
               <div>
-                <label>€ в час</label>
+                <label>€ в час с 01.10.2026</label>
                 <div class="rate-value" id="hourRateValue">13,00 €</div>
               </div>
               <div>
@@ -1002,8 +1002,8 @@
             </div>
             <div class="rates" id="ratesEdit" hidden>
               <label>
-                € в час
-                <input type="number" id="hourRate" min="0" step="1" inputmode="decimal">
+                € в час с 01.10.2026
+                <input type="number" id="hourRate" min="0" step="0.01" inputmode="decimal">
               </label>
               <label>
                 € за поездку на машине
@@ -1021,7 +1021,7 @@
                 Сохранить
               </button>
             </div>
-            <p class="note">Ставки применяются ко всем добавленным дням и сохраняются на этом устройстве.</p>
+            <p class="note" id="historicalRateValue"></p>
           </section>
 
           <section class="side-section">
@@ -1121,6 +1121,7 @@
     const defaultState = {
       ratesVersion: RATES_VERSION,
       hourRate: 13,
+      historicalHourRate: null,
       tripRate: 4.86,
       ratesUpdatedAt: null,
       deletedDays: {},
@@ -1148,6 +1149,7 @@
       hourRate: document.querySelector("#hourRate"),
       tripRate: document.querySelector("#tripRate"),
       hourRateValue: document.querySelector("#hourRateValue"),
+      historicalRateValue: document.querySelector("#historicalRateValue"),
       tripRateValue: document.querySelector("#tripRateValue"),
       editRatesBtn: document.querySelector("#editRatesBtn"),
       saveRatesBtn: document.querySelector("#saveRatesBtn"),
@@ -1239,6 +1241,7 @@
     });
 
     els.saveRatesBtn.addEventListener("click", () => {
+      state.historicalHourRate = state.historicalHourRate ?? state.hourRate;
       state.hourRate = readNumber(els.hourRate.value);
       state.tripRate = readNumber(els.tripRate.value);
       state.ratesUpdatedAt = nowIso();
@@ -1448,6 +1451,7 @@
 
       if (localState.ratesUpdatedAt && timestampMs(localState.ratesUpdatedAt) >= timestampMs(serverState.ratesUpdatedAt)) {
         merged.hourRate = localState.hourRate;
+        merged.historicalHourRate = serverState.historicalHourRate ?? localState.historicalHourRate ?? serverState.hourRate;
         merged.tripRate = localState.tripRate;
         merged.ratesUpdatedAt = localState.ratesUpdatedAt;
       }
@@ -1495,6 +1499,7 @@
 
       els.topTotal.textContent = money(totals.pay);
       els.hourRateValue.textContent = money(state.hourRate);
+      els.historicalRateValue.textContent = `До 01.10.2026: ${money(state.historicalHourRate ?? state.hourRate)} в час`;
       els.tripRateValue.textContent = money(state.tripRate);
       els.sumDays.textContent = countUniqueDates(state.days);
       els.recordsCount.textContent = state.days.length;
@@ -1504,7 +1509,8 @@
       els.sumParking.textContent = money(totals.parking);
       els.sumOvernight.textContent = money(totals.overnight);
       els.sumPay.textContent = money(totals.pay);
-      els.sumFormula.innerHTML = `${formatDecimalHours(totals.ms)} ч × ${money(state.hourRate)} + ${totals.trips} поездок × ${money(state.tripRate)} + паркинг ${money(totals.parking)} + ночевки ${money(totals.overnight)} = <strong>${money(totals.pay)}</strong>`;
+      const hourlyParts = [...totals.hoursByRate].map(([rate, ms]) => `${formatDecimalHours(ms)} ч × ${money(rate)}`);
+      els.sumFormula.innerHTML = `${hourlyParts.join(" + ") || `0 ч × ${money(state.hourRate)}`} + ${totals.trips} поездок × ${money(state.tripRate)} + паркинг ${money(totals.parking)} + ночевки ${money(totals.overnight)} = <strong>${money(totals.pay)}</strong>`;
       els.weekLabel.textContent = `${formatShortDate(weekRange.start)} - ${formatShortDate(addDays(weekRange.end, -1))}`;
       els.weekHours.textContent = formatDuration(weekTotals.ms);
       els.weekTrips.textContent = weekTotals.trips;
@@ -1554,7 +1560,7 @@
         <div class="metric">
           <span>К оплате</span>
           <strong class="money-value">${money(payFor(day))}</strong>
-          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(state.hourRate)} + ${day.trips} × ${money(state.tripRate)} + ${money(day.parking || 0)} + ${money(day.overnight || 0)}</span>
+          <span>${formatDecimalHours(currentElapsed(day))} ч × ${money(hourRateFor(day))} + ${day.trips} × ${money(state.tripRate)} + ${money(day.parking || 0)} + ${money(day.overnight || 0)}</span>
         </div>
         <div class="day-actions">
           <button class="icon-btn" type="button" data-action="edit" data-id="${day.id}" title="Редактировать день" aria-label="Редактировать день">
@@ -1662,12 +1668,14 @@
       return days.reduce((acc, day) => {
         const ms = currentElapsed(day);
         acc.ms += ms;
+        const rate = hourRateFor(day);
+        acc.hoursByRate.set(rate, (acc.hoursByRate.get(rate) || 0) + ms);
         acc.trips += day.trips;
         acc.parking += day.parking || 0;
         acc.overnight += day.overnight || 0;
         acc.pay += payFor(day);
         return acc;
-      }, { ms: 0, trips: 0, parking: 0, overnight: 0, pay: 0 });
+      }, { ms: 0, trips: 0, parking: 0, overnight: 0, pay: 0, hoursByRate: new Map() });
     }
 
     function countUniqueDates(days) {
@@ -1675,7 +1683,11 @@
     }
 
     function payFor(day) {
-      return (currentElapsed(day) / 3600000 * state.hourRate) + (day.trips * state.tripRate) + (day.parking || 0) + (day.overnight || 0);
+      return (currentElapsed(day) / 3600000 * hourRateFor(day)) + (day.trips * state.tripRate) + (day.parking || 0) + (day.overnight || 0);
+    }
+
+    function hourRateFor(day) {
+      return day.date < "2026-10-01" ? (state.historicalHourRate ?? state.hourRate) : state.hourRate;
     }
 
     function isInRange(day, start, end) {
