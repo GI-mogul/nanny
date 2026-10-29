@@ -29,6 +29,7 @@ const publicFiles = new Map([
   ["/index.html", "index.html"]
 ]);
 let dbPool = null;
+let stateWriteQueue = Promise.resolve();
 
 loadSessions();
 const dataStoreReady = initDataStore().catch((error) => {
@@ -180,20 +181,39 @@ async function getSharedState() {
 
 async function saveSharedState(value) {
   await dataStoreReady;
-  const previous = await getSharedState();
-  const normalized = mergeStates(previous, value);
   if (dbPool) {
-    await dbPool.query(`
-      insert into app_state (key, value, updated_at)
-      values ($1, $2, now())
-      on conflict (key)
-      do update set value = excluded.value, updated_at = now()
-    `, ["shared", normalized]);
-    return normalized;
+    const client = await dbPool.connect();
+    try {
+      await client.query("BEGIN");
+      // Serialize the read/merge/write across all server instances.
+      await client.query("SELECT pg_advisory_xact_lock(67291401)");
+      const result = await client.query("select value from app_state where key = $1", ["shared"]);
+      const normalized = mergeStates(result.rows[0]?.value, value);
+      await client.query(`
+        insert into app_state (key, value, updated_at)
+        values ($1, $2, now())
+        on conflict (key)
+        do update set value = excluded.value, updated_at = now()
+      `, ["shared", normalized]);
+      await client.query("COMMIT");
+      return normalized;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
-  await fs.promises.writeFile(DATA_STORE_PATH, JSON.stringify(normalized));
-  return normalized;
+  const write = stateWriteQueue.then(async () => {
+    const normalized = mergeStates(await getSharedState(), value);
+    const temporaryPath = `${DATA_STORE_PATH}.tmp`;
+    await fs.promises.writeFile(temporaryPath, JSON.stringify(normalized));
+    await fs.promises.rename(temporaryPath, DATA_STORE_PATH);
+    return normalized;
+  });
+  stateWriteQueue = write.catch(() => {});
+  return write;
 }
 
 async function getAuditLog(limit = 30) {

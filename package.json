@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "check": "node --check server.js && node scripts/verify-release.js && node scripts/test-hourly-rates.js",
+    "check": "node --check server.js && node scripts/verify-release.js && node scripts/test-hourly-rates.js && node scripts/test-sync.js",
     "start": "node server.js"
   },
   "dependencies": {
