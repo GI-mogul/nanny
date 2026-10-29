@@ -902,6 +902,8 @@
       <div class="today-total">
         <span>К оплате всего</span>
         <strong id="topTotal">0 €</strong>
+        <span id="syncStatus" role="status" aria-live="polite">Подключение к серверу…</span>
+        <a href="/login" id="syncLogin" hidden>Повторить вход</a>
       </div>
     </header>
 
@@ -1139,6 +1141,8 @@
     let selectedMonth = toMonthInputValue(new Date());
     let saveTimer = null;
     let serverSyncReady = false;
+    let syncInFlight = false;
+    let localChangeVersion = 0;
 
     const els = {
       form: document.querySelector("#addDayForm"),
@@ -1203,6 +1207,12 @@
       els.recordsPanel.open = false;
     }
     loadServerState();
+    setInterval(loadServerState, 15000);
+    window.addEventListener("focus", loadServerState);
+    window.addEventListener("online", loadServerState);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadServerState();
+    });
 
     els.form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1327,7 +1337,9 @@
     }
 
     function persist() {
+      localChangeVersion += 1;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setSyncStatus("Изменения сохранены на устройстве; отправка…");
       if (serverSyncReady) scheduleServerSave();
     }
 
@@ -1349,32 +1361,32 @@
     }
 
     async function loadServerState() {
+      if (syncInFlight || location.protocol === "file:") return;
+      syncInFlight = true;
       try {
-        const response = await fetch("/api/state", { credentials: "same-origin" });
-        if (!response.ok) {
-          render();
-          return;
-        }
-
+        const response = await fetch("/api/state", { credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15000) });
+        checkSyncResponse(response);
         const payload = await response.json();
-        const serverState = payload.state;
-        if (serverState?.days?.length || serverState?.hourRate || serverState?.tripRate) {
-          const normalizedServerState = normalizeClientState(serverState);
-          state = mergeClientStates(normalizedServerState, state);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-          if (JSON.stringify(state) !== JSON.stringify(normalizedServerState)) {
-            await saveServerStateNow();
-          }
-        } else if (state.days.length) {
-          await saveServerStateNow();
+        const serverState = normalizeClientState(payload.state);
+        // Keep a recovery copy before reconciling previously unsent records.
+        localStorage.setItem(`${STORAGE_KEY}-before-sync`, JSON.stringify(state));
+        state = mergeClientStates(serverState, state);
+        if (JSON.stringify(state) !== JSON.stringify(serverState)) {
+          await sendStateToServer();
+        } else {
+          setSyncStatus("Все изменения сохранены на сервере");
         }
-      } catch {
-        // Local file mode or offline use keeps browser storage working.
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        showSyncError(error);
       } finally {
+        syncInFlight = false;
         serverSyncReady = true;
-        els.hourRate.value = state.hourRate;
-        els.tripRate.value = state.tripRate;
-        render();
+        if (els.ratesEdit.hidden) {
+          els.hourRate.value = state.hourRate;
+          els.tripRate.value = state.tripRate;
+        }
+        if (!editingDayId) render();
         loadAuditLog();
       }
     }
@@ -1385,17 +1397,61 @@
     }
 
     async function saveServerStateNow() {
-      try {
-        const response = await fetch("/api/state", {
-          method: "PUT",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ state })
-        });
-        if (response.ok) loadAuditLog();
-      } catch {
-        // Keep local changes; the next successful edit will retry.
+      if (syncInFlight) {
+        scheduleServerSave();
+        return;
       }
+      syncInFlight = true;
+      try {
+        await sendStateToServer();
+        if (!editingDayId) render();
+        loadAuditLog();
+      } catch (error) {
+        showSyncError(error);
+      } finally {
+        syncInFlight = false;
+      }
+    }
+
+    async function sendStateToServer() {
+      const sentVersion = localChangeVersion;
+      const response = await fetch("/api/state", {
+        method: "PUT",
+        signal: AbortSignal.timeout(15000),
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state })
+      });
+      checkSyncResponse(response);
+      const payload = await response.json();
+      if (!payload.state) throw new Error("Сервер не подтвердил сохранение");
+      state = sentVersion === localChangeVersion
+        ? normalizeClientState(payload.state)
+        : mergeClientStates(payload.state, state);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (sentVersion !== localChangeVersion) {
+        scheduleServerSave();
+      } else {
+        setSyncStatus("Все изменения сохранены на сервере");
+      }
+    }
+
+    function checkSyncResponse(response) {
+      if (response.status === 401) {
+        const error = new Error("Вход истек. Изменения пока только на этом устройстве");
+        error.needsLogin = true;
+        throw error;
+      }
+      if (!response.ok) throw new Error(`Сервер не сохранил данные (${response.status})`);
+    }
+
+    function setSyncStatus(message, needsLogin = false) {
+      document.querySelector("#syncStatus").textContent = message;
+      document.querySelector("#syncLogin").hidden = !needsLogin;
+    }
+
+    function showSyncError(error) {
+      setSyncStatus(error.needsLogin ? error.message : "Нет подтверждения сервера. Изменения сохранены на устройстве; повторим отправку", Boolean(error.needsLogin));
     }
 
     async function loadAuditLog() {
